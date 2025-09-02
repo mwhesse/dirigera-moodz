@@ -1,12 +1,17 @@
-# DIRIGERA Moodz - TRADFRI Music Sync
+# Dirigera Moodz
 
-A web application that synchronizes IKEA TRADFRI smart lights with Spotify music playback in real-time. The lights change color and pulsate based on the music's rhythm, frequency characteristics, and energy levels.
+A web application that synchronizes IKEA TRADFRI smart lights with music in real-time. The lights change color and pulsate based on the music's rhythm, frequency characteristics, and energy levels.
+
+**🎵 Works with ANY audio source**: Spotify integration is completely optional - the app can listen to your microphone to sync lights with any music playing on your device!
+
+![Dirigera Moodz Screenshot](./assets/dirigera-moodz.png)
 
 ## Features
 
+- **Universal Audio Support**: Works with ANY audio source via microphone input - no Spotify required!
+- **Optional Spotify Integration**: Enhanced experience with Spotify Web Playback SDK for premium users
 - **Real-time Music Analysis**: Uses Web Audio API to analyze music frequency bands and detect beats
 - **Smart Light Sync**: TRADFRI lights respond to bass, mids, and treble with different colors and effects
-- **Spotify Integration**: Full integration with Spotify Web Playback SDK for premium users
 - **WebSocket Communication**: Low-latency communication between frontend audio analysis and backend light control
 - **DIRIGERA Hub Support**: Works with IKEA's DIRIGERA hub using reverse-engineered REST API
 - **Advanced Effects**: Beat detection, song section recognition, and customizable sync settings
@@ -14,10 +19,10 @@ A web application that synchronizes IKEA TRADFRI smart lights with Spotify music
 
 ## Prerequisites
 
-- **Spotify Premium Account**: Required for Spotify Web Playback SDK
 - **IKEA DIRIGERA Hub**: Connected to your network with TRADFRI lights
 - **Node.js**: Version 20.x or higher
 - **Network Access**: All devices must be on the same local network
+- **Spotify Premium Account**: Optional - only needed if you want to use Spotify integration
 
 ## Quick Start
 
@@ -36,7 +41,9 @@ cd ../frontend
 npm install
 ```
 
-### 2. Configure Spotify App
+### 2. Configure Spotify App (Optional)
+
+**Skip this step if you only want to use microphone input!**
 
 1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
 2. Create a new app with these settings:
@@ -51,6 +58,7 @@ npm install
 cp .env.example .env
 
 # Edit .env with your configuration:
+# Spotify settings (OPTIONAL - leave empty to use microphone only)
 SPOTIFY_CLIENT_ID=your_spotify_client_id_here
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
 SPOTIFY_REDIRECT_URI=http://localhost:3000/callback
@@ -90,12 +98,20 @@ Visit `http://localhost:3000` to use the application.
 
 ## Usage
 
-### Initial Setup
+### Two Ways to Use Dirigera Moodz:
 
-1. **Connect to Spotify**: Click "Connect with Spotify" and authorize the application
-2. **Device Discovery**: The app will automatically discover TRADFRI lights on your network
-3. **Start Music**: Play music on Spotify - the Web Playback SDK will transfer playback to the app
-4. **Enjoy the Show**: Your lights will now sync with the music!
+#### Option 1: Microphone Mode (Works with ANY audio)
+1. **Select Audio-Only Mode**: Choose this when the app starts
+2. **Grant Microphone Permission**: Allow the app to access your microphone
+3. **Play Music**: Play any music on your device (Spotify, YouTube, Apple Music, etc.)
+4. **Enjoy the Show**: Your lights will sync with whatever audio is playing!
+
+#### Option 2: Spotify Mode (Enhanced experience)
+1. **Select Spotify Mode**: Choose this when the app starts
+2. **Connect to Spotify**: Click "Connect with Spotify" and authorize the application
+3. **Device Discovery**: The app will automatically discover TRADFRI lights on your network
+4. **Start Music**: Play music on Spotify - the Web Playback SDK will transfer playback to the app
+5. **Enjoy the Show**: Your lights will sync with premium audio analysis!
 
 ### Settings and Customization
 
