@@ -48,7 +48,7 @@ function App() {
         <header className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">
-              TRADFRI Music Sync
+              Dirigera Moodz
             </h1>
             <p className="text-white/70">
               {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • 
@@ -128,7 +128,7 @@ function App() {
         {/* Footer */}
         <footer className="text-center text-white/40 text-sm mt-12">
           <p>
-            TRADFRI Music Sync • {appMode === 'spotify' ? 'Spotify Integration' : 'Universal Audio'} Mode • 
+            Dirigera Moodz • {appMode === 'spotify' ? 'Spotify Integration' : 'Universal Audio'} Mode • 
             Compatible with IKEA DIRIGERA Hub
           </p>
           <div className="flex items-center justify-center space-x-6 mt-2">

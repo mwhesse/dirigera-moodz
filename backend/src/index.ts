@@ -213,7 +213,7 @@ class Server {
       this.app.listen(this.port, () => {
         logger.info(`HTTP server running on port ${this.port}`);
         logger.info(`WebSocket server running on port ${this.wsPort}`);
-        logger.info('TRADFRI Music Sync Server started successfully');
+        logger.info('Dirigera Moodz Server started successfully');
         
         // Log important URLs
         logger.info(`API Documentation: http://localhost:${this.port}/health`);
