@@ -12,7 +12,8 @@ export class AudioAnalyzer {
   private onFrequencyCallback: (data: FrequencyData) => void;
   private onSectionCallback?: (data: SongSection) => void;
   private isAnalyzing = false;
-  private animationFrameId: number | null = null;
+  private analysisIntervalId: number | null = null;
+  private readonly analysisInterval = 1000 / 30; // 30 FPS analysis rate
 
   constructor(
     onBeat: (data: BeatData) => void,
@@ -157,10 +158,10 @@ export class AudioAnalyzer {
       this.meydaAnalyzer.stop();
     }
 
-    // Cancel animation frame
-    if (this.animationFrameId !== null) {
-      cancelAnimationFrame(this.animationFrameId);
-      this.animationFrameId = null;
+    // Clear analysis interval
+    if (this.analysisIntervalId !== null) {
+      clearInterval(this.analysisIntervalId);
+      this.analysisIntervalId = null;
     }
 
     console.log('Audio analysis stopped');
@@ -193,12 +194,10 @@ export class AudioAnalyzer {
 
       // Send frequency update
       this.onFrequencyCallback(bands);
-
-      // Continue analysis loop
-      this.animationFrameId = requestAnimationFrame(analyze);
     };
 
-    analyze();
+    // Use setInterval instead of requestAnimationFrame to continue running when tab is inactive
+    this.analysisIntervalId = setInterval(analyze, this.analysisInterval) as unknown as number;
   }
 
   private analyzeFrequencyBands(frequencyData: Uint8Array): FrequencyData {

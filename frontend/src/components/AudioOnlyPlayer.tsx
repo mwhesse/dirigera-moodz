@@ -15,6 +15,27 @@ export const AudioOnlyPlayer: React.FC = () => {
   const audioAnalyzer = useRef<AudioAnalyzer | null>(null);
   const wsClient = useRef<WebSocketClient | null>(null);
   const { setFrequencyData, setBeatData, lastBeatTime } = useLightStore();
+  const [tabVisible, setTabVisible] = useState(true);
+
+  // Handle tab visibility changes to keep audio analysis running
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const isVisible = !document.hidden;
+      setTabVisible(isVisible);
+      
+      if (isVisible) {
+        console.log('Tab became visible - audio analysis should continue');
+      } else {
+        console.log('Tab became hidden - audio analysis continues with setInterval');
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -279,6 +300,10 @@ export const AudioOnlyPlayer: React.FC = () => {
             <div className={`w-2 h-2 rounded-full mr-1 ${isAnalyzing ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
             Mic {isAnalyzing ? 'Active' : 'Paused'}
           </div>
+          <div className={`flex items-center ${tabVisible ? 'text-green-400' : 'text-blue-400'}`}>
+            <div className={`w-2 h-2 rounded-full mr-1 ${tabVisible ? 'bg-green-400' : 'bg-blue-400 animate-pulse'}`}></div>
+            Tab {tabVisible ? 'Active' : 'Background'}
+          </div>
           <div className="text-white/40">
             Beat Data: {lastBeatTime ? 'Yes' : 'No'}
           </div>
@@ -299,6 +324,7 @@ export const AudioOnlyPlayer: React.FC = () => {
             <li>• Turn up your volume for better detection</li>
             <li>• Minimize background noise</li>
             <li>• Try different music genres for different effects</li>
+            <li>• <strong>Works in background</strong> - you can switch tabs and lights will still sync!</li>
             <li>• Make sure your backend server is running on port 3001</li>
             <li>• Ensure DIRIGERA lights are discovered and connected</li>
           </ul>
