@@ -1,4 +1,4 @@
-# TRADFRI Music Sync
+# DIRIGERA Moodz - TRADFRI Music Sync
 
 A web application that synchronizes IKEA TRADFRI smart lights with Spotify music playback in real-time. The lights change color and pulsate based on the music's rhythm, frequency characteristics, and energy levels.
 
