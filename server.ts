@@ -79,6 +79,7 @@ app.prepare().then(async () => {
 
   // Scene routes
   server.get('/api/scenes', lightsController.getScenes);
+  server.put('/api/scenes/:id', lightsController.updateScene);
   server.post('/api/scenes/start', lightsController.startScene);
   server.post('/api/scenes/stop', lightsController.stopScene);
 

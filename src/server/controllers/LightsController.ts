@@ -341,12 +341,45 @@ export class LightsController {
       const currentScene = this.sceneEngine.getCurrentScene();
       res.json({
         success: true,
-        scenes: SCENE_PRESETS,
+        scenes: this.sceneEngine.getAllScenes(),
         currentSceneId: currentScene ? currentScene.id : null
       });
     } catch (error) {
       this.logger.error('Error getting scenes:', error);
       res.status(500).json({ error: 'Failed to get scenes' });
+    }
+  };
+
+  // PUT /api/scenes/:id
+  updateScene = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { transitionSpeed, brightness } = req.body;
+
+      if (!id) {
+        res.status(400).json({ error: 'Scene ID is required' });
+        return;
+      }
+
+      const updates: any = {};
+      if (transitionSpeed !== undefined) updates.transitionSpeed = transitionSpeed;
+      if (brightness !== undefined) updates.brightness = brightness;
+
+      const updatedScene = this.sceneEngine.updateScene(id, updates);
+
+      if (!updatedScene) {
+        res.status(404).json({ error: 'Scene not found' });
+        return;
+      }
+
+      res.json({
+        success: true,
+        message: 'Scene updated',
+        scene: updatedScene
+      });
+    } catch (error) {
+      this.logger.error('Error updating scene:', error);
+      res.status(500).json({ error: 'Failed to update scene' });
     }
   };
 

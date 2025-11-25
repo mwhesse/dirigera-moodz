@@ -1,0 +1,10 @@
+{
+  "tropical-twilight": {
+    "transitionSpeed": 30000,
+    "brightness": 70
+  },
+  "la-sunset": {
+    "transitionSpeed": 9000,
+    "brightness": 44
+  }
+}

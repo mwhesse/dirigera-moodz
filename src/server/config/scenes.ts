@@ -196,5 +196,65 @@ export const SCENE_PRESETS: Scene[] = [
       { hue: 260, saturation: 0.6 }, // Deep Violet
       { hue: 45, saturation: 0.8 }   // Golden Hour
     ]
+  },
+  {
+    id: 'sunset-beach',
+    name: 'Sunset at the Beach',
+    description: 'Warm oranges, pinks, and deep blues reflecting on the water.',
+    type: 'drift',
+    transitionSpeed: 8000,
+    brightness: 70,
+    palette: [
+      { hue: 30, saturation: 0.9 },  // Orange
+      { hue: 340, saturation: 0.8 }, // Pink/Red
+      { hue: 280, saturation: 0.7 }, // Purple
+      { hue: 240, saturation: 0.9 }, // Deep Blue
+      { hue: 20, saturation: 0.6 }   // Soft Amber
+    ]
+  },
+  {
+    id: 'geneva-afternoon',
+    name: 'Geneva Afternoon',
+    description: 'Clean whites, lake blues, and slate greys.',
+    type: 'drift',
+    transitionSpeed: 10000,
+    brightness: 80,
+    palette: [
+      { hue: 200, saturation: 0.7 }, // Lake Blue
+      { hue: 200, saturation: 0.1 }, // Cool White
+      { hue: 210, saturation: 0.3 }, // Slate Grey
+      { hue: 120, saturation: 0.4 }, // Fresh Green
+      { hue: 190, saturation: 0.5 }  // Cyan
+    ]
+  },
+  {
+    id: 'christmas-tree',
+    name: 'Christmas Tree',
+    description: 'Traditional red, green, and gold holiday vibes.',
+    type: 'drift',
+    transitionSpeed: 5000,
+    brightness: 90,
+    palette: [
+      { hue: 350, saturation: 1.0 }, // Red
+      { hue: 120, saturation: 0.9 }, // Green
+      { hue: 45, saturation: 0.9 },  // Gold
+      { hue: 40, saturation: 0.5 },  // Warm White
+      { hue: 10, saturation: 0.9 }   // Deep Red
+    ]
+  },
+  {
+    id: 'deep-space-nebula',
+    name: 'Deep Space Nebula',
+    description: 'Swirling cosmic dust and distant starlight.',
+    type: 'drift',
+    transitionSpeed: 18000,
+    brightness: 30,
+    palette: [
+      { hue: 270, saturation: 0.8 }, // Deep Purple
+      { hue: 240, saturation: 0.7 }, // Dark Blue
+      { hue: 320, saturation: 0.6 }, // Magenta
+      { hue: 180, saturation: 0.5 }, // Cyan
+      { hue: 60, saturation: 0.1 }   // Faint Yellow/White
+    ]
   }
 ];
