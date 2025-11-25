@@ -1,279 +1,74 @@
 # Dirigera Moodz
 
-A web application that synchronizes IKEA TRADFRI smart lights with music in real-time. The lights change color and pulsate based on the music's rhythm, frequency characteristics, and energy levels.
-
-**🎵 Works with ANY audio source**: Spotify integration is completely optional - the app can listen to your microphone to sync lights with any music playing on your device!
-
-![Dirigera Moodz Screenshot](./assets/dirigera-moodz.png)
+A real-time light synchronization app for IKEA Dirigera Hub. 
+This application captures audio from your browser (tab audio or microphone) and synchronizes your IKEA smart lights to the music in real-time.
 
 ## Features
 
-- **Universal Audio Support**: Works with ANY audio source via microphone input - no Spotify required!
-- **Optional Spotify Integration**: Enhanced experience with Spotify Web Playback SDK for premium users
-- **Real-time Music Analysis**: Uses Web Audio API to analyze music frequency bands and detect beats
-- **Smart Light Sync**: TRADFRI lights respond to bass, mids, and treble with different colors and effects
-- **WebSocket Communication**: Low-latency communication between frontend audio analysis and backend light control
-- **DIRIGERA Hub Support**: Works with IKEA's DIRIGERA hub using reverse-engineered REST API
-- **Advanced Effects**: Beat detection, song section recognition, and customizable sync settings
-- **Visual Feedback**: Real-time audio visualization and light status monitoring
+*   **Real-time Audio Visualization**: Uses Web Audio API to analyze frequency bands (Bass, Mids, Treble).
+*   **IKEA Dirigera Integration**: Direct local control of your smart lights for minimal latency.
+*   **Customizable Effects**: Adjust sensitivity, color modes, and intensity.
+*   **Browser-based Audio Capture**: Works with any audio source (Spotify, YouTube, Apple Music, etc.) played in your browser.
 
-## Prerequisites
+## Getting Started
 
-- **IKEA DIRIGERA Hub**: Connected to your network with TRADFRI lights
-- **Node.js**: Version 20.x or higher
-- **Network Access**: All devices must be on the same local network
-- **Spotify Premium Account**: Optional - only needed if you want to use Spotify integration
+### Prerequisites
 
-## Quick Start
+*   Node.js 18+
+*   IKEA Dirigera Hub
+*   IKEA Smart Lights (Color or Dimmable) connected to the hub
 
-### 1. Clone and Install
+### Installation
 
-```bash
-git clone <repository-url>
-cd tradfri-music-sync
+1.  Clone the repository:
+    ```bash
+    git clone <repository-url>
+    cd dirigera-moodz
+    ```
 
-# Install backend dependencies
-cd backend
-npm install
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
 
-# Install frontend dependencies  
-cd ../frontend
-npm install
-```
+3.  Run the development server:
+    ```bash
+    npm run dev
+    ```
 
-### 2. Configure Spotify App (Optional)
-
-**Skip this step if you only want to use microphone input!**
-
-1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Create a new app with these settings:
-   - **Redirect URIs**: `http://localhost:3000/callback`
-   - **Which API/SDKs are you planning to use**: Web Playback SDK
-3. Note your Client ID and Client Secret
-
-### 3. Set Up Environment
-
-```bash
-# Copy example environment file
-cp .env.example .env
-
-# Edit .env with your configuration:
-# Spotify settings (OPTIONAL - leave empty to use microphone only)
-SPOTIFY_CLIENT_ID=your_spotify_client_id_here
-SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
-SPOTIFY_REDIRECT_URI=http://localhost:3000/callback
-
-# DIRIGERA configuration (leave empty for first-time setup)
-DIRIGERA_ACCESS_TOKEN=
-DIRIGERA_GATEWAY_IP=auto
-
-# Server configuration (defaults usually work)
-PORT=3001
-WS_PORT=8080
-```
-
-### 4. First-Time DIRIGERA Setup
-
-```bash
-# Start the backend server
-cd backend
-npm run dev
-```
-
-**Important**: On first run without a DIRIGERA access token, the server will prompt you to press the action button on your DIRIGERA hub. You have 60 seconds to press it. The server will then display your access token - copy it to your `.env` file for future use.
-
-### 5. Start the Application
-
-```bash
-# In one terminal - start backend
-cd backend
-npm run dev
-
-# In another terminal - start frontend  
-cd frontend
-npm run dev
-```
-
-Visit `http://localhost:3000` to use the application.
+4.  Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Usage
 
-### Two Ways to Use Dirigera Moodz:
+### 1. Connect your Hub
 
-#### Option 1: Microphone Mode (Works with ANY audio)
-1. **Select Audio-Only Mode**: Choose this when the app starts
-2. **Grant Microphone Permission**: Allow the app to access your microphone
-3. **Play Music**: Play any music on your device (Spotify, YouTube, Apple Music, etc.)
-4. **Enjoy the Show**: Your lights will sync with whatever audio is playing!
+1.  Click the **Settings** (gear icon) in the top right corner.
+2.  In the "Hub Connection" section, click **Connect Hub**.
+3.  Press the physical **Action Button** on your Dirigera Hub when prompted.
+4.  Once connected, the app will save your access token locally for future sessions.
 
-#### Option 2: Spotify Mode (Enhanced experience)
-1. **Select Spotify Mode**: Choose this when the app starts
-2. **Connect to Spotify**: Click "Connect with Spotify" and authorize the application
-3. **Device Discovery**: The app will automatically discover TRADFRI lights on your network
-4. **Start Music**: Play music on Spotify - the Web Playback SDK will transfer playback to the app
-5. **Enjoy the Show**: Your lights will sync with premium audio analysis!
+### 2. Start Audio Sync
 
-### Settings and Customization
+1.  Click **"Start Audio Sync"**.
+2.  Select **"Tab Audio"** (recommended) or "Microphone" in the browser permission dialog.
+    *   *Note: For best results, use "Tab Audio" and select the tab playing your music (e.g., Spotify Web Player).*
+3.  Your lights should now react to the music!
 
-Access settings by clicking the gear icon. You can adjust:
+### 3. Customize
 
-- **Sensitivity**: How responsive lights are to music changes
-- **Color Mode**: Choose between frequency mapping, mood-based colors, or random colors
-- **Effect Intensity**: Control the intensity of flashes and color changes
-- **Smoothing**: Adjust transition smoothness between colors
-- **Beat Detection Threshold**: Fine-tune beat detection sensitivity
-- **Transition Speed**: Control how fast colors change
-
-### Quick Presets
-
-- **Party Mode**: High intensity with fast transitions
-- **Ambient**: Subtle, smooth lighting changes
-- **Balanced**: Default settings for most music types
+Use the **Light Controller** sidebar to select which lights to sync.
+Use the **Settings** menu to tweak:
+*   **Sensitivity**: How reactive the lights are.
+*   **Color Mode**: Choose between Frequency mapping, Mood-based, or Random.
+*   **Intensity**: Brightness of effects.
 
 ## Architecture
 
-The application consists of several key components:
-
-### Backend (Node.js/TypeScript)
-- **DIRIGERA Service**: Communicates with IKEA hub using REST API
-- **Spotify Service**: Handles OAuth and playback state
-- **Sync Engine**: Processes audio data and coordinates light changes
-- **WebSocket Server**: Real-time communication with frontend
-- **Rate Limiting**: Prevents overwhelming the DIRIGERA hub
-
-### Frontend (React/TypeScript)
-- **Audio Analyzer**: Web Audio API for real-time frequency analysis
-- **Beat Detector**: Algorithm for detecting musical beats
-- **Spotify Player**: Web Playback SDK integration
-- **Visualization**: Real-time audio visualization
-- **WebSocket Client**: Sends audio data to backend
-
-### Key Technologies
-- **Web Audio API**: Real-time audio processing
-- **WebSocket**: Low-latency bi-directional communication
-- **Meyda**: Advanced audio feature extraction
-- **Spotify Web Playback SDK**: Music playback control
-- **React**: Modern UI framework
-- **Tailwind CSS**: Utility-first CSS framework
-
-## API Endpoints
-
-### Spotify Routes
-- `GET /api/spotify/auth` - Get authorization URL
-- `GET /api/spotify/callback` - Handle OAuth callback
-- `POST /api/spotify/refresh` - Refresh access token
-- `GET /api/spotify/playback` - Get current playback state
-- `PUT /api/spotify/transfer` - Transfer playback to device
-- `POST /api/spotify/control` - Control playback (play/pause/skip)
-
-### Light Control Routes
-- `GET /api/lights/status` - Get connection and device status
-- `GET /api/lights/discover` - Discover TRADFRI devices
-- `POST /api/lights/update` - Update light colors/brightness
-- `POST /api/lights/command` - Execute light command (pulse, strobe)
-- `GET /api/lights/sync/settings` - Get sync settings
-- `PUT /api/lights/sync/settings` - Update sync settings
-- `POST /api/lights/test` - Run light tests (rainbow, pulse, strobe)
-
-### WebSocket Events
-- `BEAT_DETECTED` - Beat detection data from frontend
-- `FREQUENCY_UPDATE` - Audio frequency analysis data
-- `SONG_SECTION` - Detected song section changes
-- `PLAYBACK_STATE` - Current Spotify playback information
-- `SETTINGS_UPDATE` - Sync settings changes
-
-## Deployment
-
-### Development
-```bash
-# Backend
-cd backend && npm run dev
-
-# Frontend  
-cd frontend && npm run dev
-```
-
-### Production with Docker
-```bash
-# Build and run with Docker Compose
-docker-compose up --build
-```
-
-The application will be available at `http://localhost:3000`.
-
-### Environment Variables for Production
-```bash
-NODE_ENV=production
-CORS_ORIGIN=https://yourdomain.com
-LOG_LEVEL=info
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**"DIRIGERA Hub Not Connected"**
-- Ensure hub is powered on and connected to the same network
-- Check that DIRIGERA_ACCESS_TOKEN is set in .env
-- Try rediscovering devices from the UI
-
-**"Spotify Authentication Failed"**
-- Verify Client ID and Client Secret in .env
-- Check redirect URI matches Spotify app configuration
-- Ensure you have Spotify Premium
-
-**"No Audio Analysis"**
-- Check browser permissions for microphone access
-- Ensure music is playing through the Spotify Web Player
-- Try refreshing the page
-
-**"WebSocket Connection Failed"**
-- Check that backend server is running on correct port
-- Verify WS_PORT in environment configuration
-- Check firewall settings
-
-### Performance Tips
-
-- Close other audio applications to avoid conflicts
-- Use Chrome or Firefox for best Web Audio API support
-- Ensure stable network connection between all devices
-- Limit number of connected lights for better performance
-
-### Debug Mode
-
-Enable debug logging:
-```bash
-LOG_LEVEL=debug npm run dev
-```
-
-This will show detailed information about:
-- Audio analysis data
-- Beat detection results
-- Light update commands
-- WebSocket messages
-- API requests
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+This app uses a hybrid architecture:
+*   **Frontend (Next.js/React)**: Handles audio capture (via `Meyda`), visualization, and user interface.
+*   **Backend (Node.js/Express)**: Acts as a bridge to the Dirigera Hub to avoid CORS issues and manage persistent connections.
+*   **Communication**: WebSocket connection between frontend and backend for low-latency light commands.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- IKEA for creating the TRADFRI ecosystem
-- Spotify for their comprehensive Web APIs
-- The reverse engineering community for DIRIGERA protocol documentation
-- Contributors to open-source audio analysis libraries
-
-## Disclaimer
-
-This project uses reverse-engineered APIs for DIRIGERA hub communication. While it works reliably, it's not officially supported by IKEA. Use at your own risk and ensure you have backups of your light configurations.
-
-The project is not affiliated with IKEA or Spotify.
+[MIT](LICENSE)

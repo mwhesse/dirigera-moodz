@@ -1,0 +1,23 @@
+{
+    "mcp": {
+        "allowed": ["chrome-devtools", "next-devtools", "shadcn"],
+        "excluded": []
+    },      
+    "mcpServers": {
+        "chrome-devtools": {
+            "type": "executable",
+            "command": "npx",
+            "args": ["-y", "chrome-devtools-mcp@latest"]
+        },
+        "next-devtools": {
+            "type": "executable",
+            "command": "npx",
+            "args": ["-y", "next-devtools-mcp@latest"]
+        },
+        "shadcn": {
+            "type": "executable",
+            "command": "npx",
+            "args": ["-y", "shadcn@latest", "mcp"]
+        }
+      }
+    }
