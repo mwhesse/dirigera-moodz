@@ -11,6 +11,17 @@ This application captures audio from your browser (tab audio or microphone) and 
 *   **Dynamic Mood Scenes**: Choose from a variety of preset scenes like "Savanna Sunset", "Arctic Aurora", "Bangkok Morning", "Sukhumvit Nights", and more, to instantly set the ambiance with themed light effects and gradients.
 *   **Browser-based Audio Capture**: Works with any audio source (Spotify, YouTube, Apple Music, etc.) played in your browser.
 
+## Tech Stack
+
+*   **Framework**: Next.js 16 (App Router)
+*   **Language**: TypeScript
+*   **Styling**: Tailwind CSS v4, Shadcn UI, Lucide Icons
+*   **Backend**: Node.js, Express (Custom Server)
+*   **Real-time Communication**: WebSocket (`ws`)
+*   **Audio Analysis**: Meyda
+*   **State Management**: Zustand
+*   **Hardware Integration**: `dirigera` library
+
 ## Getting Started
 
 ### Prerequisites
@@ -32,12 +43,24 @@ This application captures audio from your browser (tab audio or microphone) and 
     npm install
     ```
 
-3.  Run the development server:
+3.  **(Optional) Configuration**:
+    Create a `.env` file in the root directory if you wish to pre-configure the connection (the app also supports UI-based pairing).
+    ```env
+    # Optional: Pre-configured Hub Access
+    DIRIGERA_ACCESS_TOKEN=your_token_here
+    DIRIGERA_GATEWAY_IP=your_gateway_ip_here
+    
+    # Server Configuration
+    PORT=3000
+    WS_PORT=8080
+    ```
+
+4.  Run the development server:
     ```bash
     npm run dev
     ```
 
-4.  Open [http://localhost:3000](http://localhost:3000) in your browser.
+5.  Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Usage
 
@@ -75,10 +98,17 @@ The application allows you to switch between Audio Sync mode and Dynamic Scenes 
 
 ## Architecture
 
-This app uses a hybrid architecture:
-*   **Frontend (Next.js/React)**: Handles audio capture (via `Meyda`), visualization, and user interface.
-*   **Backend (Node.js/Express)**: Acts as a bridge to the Dirigera Hub to avoid CORS issues and manage persistent connections.
-*   **Communication**: WebSocket connection between frontend and backend for low-latency light commands.
+This app uses a **Custom Next.js Server** architecture to seamlessly integrate the backend control logic with the frontend UI.
+
+*   **`server.ts`**: The entry point. It initializes an Express application that handles both API routes (`/api/*`) and the Next.js request handler for page rendering.
+*   **`src/app`**: Next.js App Router pages and layouts (Frontend).
+*   **`src/components`**: React UI components (built with Shadcn UI and Tailwind).
+*   **`src/server`**: Backend services and controllers.
+    *   **`DirigeraService`**: Manages communication with the IKEA Hub.
+    *   **`SceneEngine`**: Handles the logic for dynamic scenes (drifting colors, transitions).
+    *   **`SyncEngine`**: processes audio data and syncs lights in real-time.
+*   **`src/lib`**: Client-side utilities and state management (Zustand).
+*   **Communication**: A WebSocket connection is established between the client (for audio data transmission) and the server (for light control commands) to ensure low latency.
 
 ## License
 

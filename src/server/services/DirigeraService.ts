@@ -5,10 +5,12 @@ import fs from 'fs';
 import path from 'path';
 
 const TOKEN_FILE = path.join(process.cwd(), '.dirigera_token');
+const SELECTION_FILE = path.join(process.cwd(), '.dirigera_selection.json');
 
 export class DirigeraService {
   private client: DirigeraClient | null = null;
   private devices: Map<string, Device> = new Map();
+  private selectedDeviceIds: Set<string> = new Set();
   private commandQueue: CommandQueue;
   private logger: Logger;
   private isConnected = false;
@@ -18,7 +20,33 @@ export class DirigeraService {
     this.logger = logger;
     this.config = config;
     this.commandQueue = new CommandQueue(10, logger); // 10 commands/second limit
+    this.loadSelection();
     this.initialize(config);
+  }
+
+  private loadSelection(): void {
+    try {
+      if (fs.existsSync(SELECTION_FILE)) {
+        const data = fs.readFileSync(SELECTION_FILE, 'utf-8');
+        const ids = JSON.parse(data);
+        if (Array.isArray(ids)) {
+          this.selectedDeviceIds = new Set(ids);
+          this.logger.info(`Loaded ${this.selectedDeviceIds.size} selected devices from file`);
+        }
+      }
+    } catch (error) {
+      this.logger.warn('Failed to load device selection file:', error);
+    }
+  }
+
+  private saveSelection(): void {
+    try {
+      const ids = Array.from(this.selectedDeviceIds);
+      fs.writeFileSync(SELECTION_FILE, JSON.stringify(ids), 'utf-8');
+      this.logger.info('Saved device selection to file');
+    } catch (error) {
+      this.logger.error('Failed to save device selection to file:', error);
+    }
   }
 
   async initialize(config: DirigeraConfig): Promise<void> {
@@ -141,12 +169,26 @@ export class DirigeraService {
               saturation: device.attributes.colorSaturation || 1
             } : undefined
           },
-          isSelected: true // Default to selected
+          // Check if ID is in selected set. If set is empty (first run ever), default to true, 
+          // otherwise respect the set (if a device is new/unknown, maybe default to true? 
+          // Let's stick to: if in set OR set is empty, true. If set has items but not this one, false.)
+          // Actually, simpler: if we have a file, we trust it. If we don't (set empty), we default all to true and save.
+          isSelected: this.selectedDeviceIds.size === 0 ? true : this.selectedDeviceIds.has(device.id)
         };
         
+        if (deviceInfo.isSelected) {
+            this.selectedDeviceIds.add(device.id);
+        }
+
         this.devices.set(device.id, deviceInfo);
         this.logger.info(`Added device: ${deviceInfo.name} (${device.id}) - Brightness: ${deviceInfo.capabilities.canChangeBrightness}, Color: ${deviceInfo.capabilities.canChangeColor}`);
       });
+      
+      // If we just populated the set for the first time, save it
+      if (this.selectedDeviceIds.size > 0 && !fs.existsSync(SELECTION_FILE)) {
+        this.saveSelection();
+      }
+
     } catch (error) {
       this.logger.error('Failed to discover devices:', error);
       throw error;
@@ -431,6 +473,14 @@ export class DirigeraService {
     const device = this.devices.get(deviceId);
     if (device) {
       device.isSelected = isSelected;
+      
+      if (isSelected) {
+        this.selectedDeviceIds.add(deviceId);
+      } else {
+        this.selectedDeviceIds.delete(deviceId);
+      }
+      
+      this.saveSelection();
       this.logger.info(`Device ${device.name} selection updated to: ${isSelected}`);
     }
   }

@@ -1,6 +1,10 @@
 import { DirigeraService } from './DirigeraService';
 import { Logger } from 'winston';
 import { SCENE_PRESETS, Scene } from '../config/scenes';
+import fs from 'fs';
+import path from 'path';
+
+const SCENES_FILE = path.join(process.cwd(), '.dirigera_scenes.json');
 
 export class SceneEngine {
   private dirigeraService: DirigeraService;
@@ -8,14 +12,81 @@ export class SceneEngine {
   private activeInterval: NodeJS.Timeout | null = null;
   private currentScene: Scene | null = null;
   private isRunning = false;
+  private scenes: Scene[];
 
   constructor(dirigeraService: DirigeraService, logger: Logger) {
     this.dirigeraService = dirigeraService;
     this.logger = logger;
+    // Initialize with presets
+    this.scenes = JSON.parse(JSON.stringify(SCENE_PRESETS)); // Deep copy
+    this.loadSceneOverrides();
+  }
+
+  private loadSceneOverrides(): void {
+    try {
+      if (fs.existsSync(SCENES_FILE)) {
+        const data = fs.readFileSync(SCENES_FILE, 'utf-8');
+        const overrides = JSON.parse(data);
+        
+        if (typeof overrides === 'object') {
+          this.scenes = this.scenes.map(scene => {
+            if (overrides[scene.id]) {
+              return { ...scene, ...overrides[scene.id] };
+            }
+            return scene;
+          });
+          this.logger.info('Loaded scene overrides from file');
+        }
+      }
+    } catch (error) {
+      this.logger.warn('Failed to load scene overrides:', error);
+    }
+  }
+
+  private saveSceneOverrides(): void {
+    try {
+      const overrides: Record<string, Partial<Scene>> = {};
+      this.scenes.forEach(scene => {
+        const preset = SCENE_PRESETS.find(p => p.id === scene.id);
+        if (preset) {
+          // Check for diffs (currently only transitionSpeed and brightness are editable)
+          if (scene.transitionSpeed !== preset.transitionSpeed || scene.brightness !== preset.brightness) {
+            overrides[scene.id] = {
+              transitionSpeed: scene.transitionSpeed,
+              brightness: scene.brightness
+            };
+          }
+        }
+      });
+      
+      fs.writeFileSync(SCENES_FILE, JSON.stringify(overrides, null, 2), 'utf-8');
+      this.logger.info('Saved scene overrides to file');
+    } catch (error) {
+      this.logger.error('Failed to save scene overrides:', error);
+    }
+  }
+
+  getAllScenes(): Scene[] {
+    return this.scenes;
+  }
+
+  updateScene(sceneId: string, updates: Partial<Scene>): Scene | null {
+    const index = this.scenes.findIndex(s => s.id === sceneId);
+    if (index === -1) return null;
+
+    this.scenes[index] = { ...this.scenes[index], ...updates };
+    
+    // If this is the active scene, update currentScene reference
+    if (this.currentScene && this.currentScene.id === sceneId) {
+      this.currentScene = this.scenes[index];
+    }
+
+    this.saveSceneOverrides();
+    return this.scenes[index];
   }
 
   startScene(sceneId: string): boolean {
-    const scene = SCENE_PRESETS.find(s => s.id === sceneId);
+    const scene = this.scenes.find(s => s.id === sceneId);
     if (!scene) {
       this.logger.warn(`Attempted to start unknown scene: ${sceneId}`);
       return false;
