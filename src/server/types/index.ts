@@ -28,6 +28,7 @@ export interface LightUpdate {
   color?: Color;
   brightness?: number;
   transitionTime?: number;
+  isOn?: boolean;
 }
 
 export interface LightCommand {

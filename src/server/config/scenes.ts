@@ -256,5 +256,65 @@ export const SCENE_PRESETS: Scene[] = [
       { hue: 180, saturation: 0.5 }, // Cyan
       { hue: 60, saturation: 0.1 }   // Faint Yellow/White
     ]
+  },
+  {
+    id: 'cyber-city',
+    name: 'Cyber City',
+    description: 'Futuristic neon green and purple vibes.',
+    type: 'drift',
+    transitionSpeed: 5000,
+    brightness: 80,
+    palette: [
+      { hue: 120, saturation: 1.0 }, // Neon Green
+      { hue: 280, saturation: 1.0 }, // Electric Purple
+      { hue: 300, saturation: 0.9 }, // Magenta
+      { hue: 150, saturation: 0.9 }, // Bright Teal
+      { hue: 260, saturation: 0.8 }  // Deep Violet
+    ]
+  },
+  {
+    id: 'late-night-vibes',
+    name: 'Late Night Vibes',
+    description: 'Deep purples and blues for a chill night.',
+    type: 'drift',
+    transitionSpeed: 15000,
+    brightness: 25,
+    palette: [
+      { hue: 260, saturation: 0.9 }, // Deep Purple
+      { hue: 240, saturation: 0.8 }, // Dark Blue
+      { hue: 280, saturation: 0.7 }, // Violet
+      { hue: 220, saturation: 0.6 }, // Navy
+      { hue: 270, saturation: 0.8 }  // Indigo
+    ]
+  },
+  {
+    id: 'japanese-whisky',
+    name: 'Japanese Whisky Bar',
+    description: 'Sophisticated ambers, golds, and warm woods.',
+    type: 'drift',
+    transitionSpeed: 12000,
+    brightness: 40,
+    palette: [
+      { hue: 35, saturation: 0.9 },  // Amber
+      { hue: 45, saturation: 0.7 },  // Gold
+      { hue: 25, saturation: 0.8 },  // Deep Orange/Wood
+      { hue: 50, saturation: 0.5 },  // Warm White
+      { hue: 30, saturation: 0.6 }   // Soft Brown
+    ]
+  },
+  {
+    id: 'yoga-morning',
+    name: 'Yoga Morning',
+    description: 'Soft, pale colors for focus and calm.',
+    type: 'drift',
+    transitionSpeed: 20000,
+    brightness: 60,
+    palette: [
+      { hue: 180, saturation: 0.2 }, // Very Pale Cyan
+      { hue: 60, saturation: 0.1 },  // Warm White
+      { hue: 300, saturation: 0.1 }, // Pale Lavender
+      { hue: 120, saturation: 0.2 }, // Soft Mint
+      { hue: 40, saturation: 0.2 }   // Pale Peach
+    ]
   }
 ];
