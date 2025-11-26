@@ -81,6 +81,7 @@ export class DirigeraService {
         }
         
         this.isConnected = true;
+        this.startConnectionHealthCheck();
         this.logger.info('DIRIGERA service initialized successfully');
       } else {
         this.logger.warn('No access token found. Please authenticate via the web interface.');
@@ -90,6 +91,27 @@ export class DirigeraService {
       this.logger.error('Failed to initialize DIRIGERA service:', error);
       // Don't throw, just leave service in disconnected state
     }
+  }
+
+  private startConnectionHealthCheck(): void {
+    // Clear any existing interval
+    if ((this as any).healthCheckInterval) {
+      clearInterval((this as any).healthCheckInterval);
+    }
+
+    // Check connection every 60 seconds
+    (this as any).healthCheckInterval = setInterval(async () => {
+      if (!this.client) return;
+
+      try {
+        // Simple ping by fetching home info
+        await this.client.home();
+      } catch (error) {
+        this.logger.warn('Connection health check failed, attempting reconnection:', error);
+        this.isConnected = false;
+        await this.initialize(this.config);
+      }
+    }, 60000);
   }
 
   public async authenticateWithButton(): Promise<string> {
