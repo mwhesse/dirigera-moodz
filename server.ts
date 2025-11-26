@@ -93,8 +93,8 @@ app.prepare().then(async () => {
     return handle(req, res);
   });
 
-  httpServer.listen(port, () => {
-    logger.info(`> Ready on http://localhost:${port}`);
+  httpServer.listen(port, '0.0.0.0', () => {
+    logger.info(`> Ready on http://0.0.0.0:${port}`);
     logger.info(`> WebSocket Server on port ${wsPort}`);
   });
 });
