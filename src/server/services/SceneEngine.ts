@@ -76,9 +76,21 @@ export class SceneEngine {
 
     this.scenes[index] = { ...this.scenes[index], ...updates };
     
-    // If this is the active scene, update currentScene reference
+    // If this is the active scene, update currentScene reference and restart loop if needed
     if (this.currentScene && this.currentScene.id === sceneId) {
       this.currentScene = this.scenes[index];
+      
+      // If running, restart the interval to pick up new speed
+      if (this.isRunning && this.activeInterval) {
+        clearInterval(this.activeInterval);
+        if (this.currentScene.type === 'drift') {
+          this.activeInterval = setInterval(() => {
+            this.driftLoop();
+          }, this.currentScene.transitionSpeed / 2);
+          
+          this.logger.info(`Updated active scene interval for speed: ${this.currentScene.transitionSpeed}ms`);
+        }
+      }
     }
 
     this.saveSceneOverrides();
@@ -139,7 +151,7 @@ export class SceneEngine {
         deviceId: device.id,
         color: color,
         brightness: this.currentScene!.brightness,
-        transitionTime: 2000 // 2s initial fade in
+        transitionTime: 500 // 0.5s initial snap
       });
     });
 

@@ -8,6 +8,7 @@ import { Settings } from '@/components/Settings';
 import { Button } from "@/components/ui/button"
 import { Settings as SettingsIcon, Lightbulb, Music, Sparkles } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { ModeToggle } from "@/components/mode-toggle";
 
 export default function Home() {
   const [showSettings, setShowSettings] = useState(false);
@@ -23,6 +24,7 @@ export default function Home() {
         </div>
         
         <div className="flex items-center gap-2">
+          <ModeToggle />
           <Button 
             variant={showLights ? "secondary" : "ghost"}
             size="icon"

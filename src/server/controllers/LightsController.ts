@@ -101,7 +101,7 @@ export class LightsController {
       // Manual control or external update overrides scenes
       this.sceneEngine.stop();
 
-      const { color, brightness, transitionTime } = req.body;
+      const { color, brightness, transitionTime, isOn } = req.body;
 
       // Validate input
       if (color) {
@@ -129,10 +129,18 @@ export class LightsController {
         }
       }
 
+      if (isOn !== undefined && typeof isOn !== 'boolean') {
+        res.status(400).json({ 
+          error: 'isOn must be a boolean.' 
+        });
+        return;
+      }
+
       await this.dirigeraService.updateLights({
         color,
         brightness,
-        transitionTime
+        transitionTime,
+        isOn
       });
 
       res.json({

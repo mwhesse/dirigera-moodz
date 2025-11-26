@@ -38,6 +38,10 @@ const SCENE_GRADIENTS: Record<string, string> = {
   'geneva-afternoon': 'from-blue-200 via-slate-300 to-emerald-400',
   'christmas-tree': 'from-red-600 via-green-600 to-yellow-400',
   'deep-space-nebula': 'from-purple-900 via-blue-900 to-pink-500',
+  'cyber-city': 'from-green-400 via-purple-600 to-fuchsia-500',
+  'late-night-vibes': 'from-violet-900 via-slate-900 to-indigo-950',
+  'japanese-whisky': 'from-amber-700 via-orange-900 to-yellow-900',
+  'yoga-morning': 'from-stone-100 via-sky-100 to-orange-50',
 };
 
 export const Scenes: React.FC<ScenesProps> = ({ onSceneActive }) => {
@@ -151,7 +155,7 @@ export const Scenes: React.FC<ScenesProps> = ({ onSceneActive }) => {
             <Card 
                 key={scene.id}
                 className={cn(
-                "overflow-hidden cursor-pointer transition-all border-2",
+                "overflow-hidden cursor-pointer transition-all border-2 group",
                 isSelected ? 'border-primary ring-2 ring-primary/20 scale-[1.02]' : 'border-transparent hover:scale-[1.02]'
                 )}
                 onClick={() => !isSelected && startScene(scene.id)}
@@ -166,15 +170,22 @@ export const Scenes: React.FC<ScenesProps> = ({ onSceneActive }) => {
                     <h3 className="font-bold text-base">{scene.name}</h3>
                     <p className="text-sm text-muted-foreground mt-1">{scene.description}</p>
                     </div>
-                    {isSelected && (
-                    <div className="bg-primary/10 p-2 rounded-full">
-                        {isLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    
+                    <div className={cn(
+                        "p-2 rounded-full transition-all duration-300",
+                        isSelected 
+                            ? "bg-primary/10 opacity-100" 
+                            : "bg-muted/50 opacity-0 group-hover:opacity-100"
+                    )}>
+                        {isSelected && isLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
                         ) : (
-                        <Play className="w-4 h-4 text-primary fill-primary" />
+                            <Play className={cn(
+                                "w-4 h-4 transition-colors",
+                                isSelected ? "text-primary fill-primary" : "text-muted-foreground group-hover:text-primary"
+                            )} />
                         )}
                     </div>
-                    )}
                 </div>
 
                 {isSelected && (
@@ -192,8 +203,8 @@ export const Scenes: React.FC<ScenesProps> = ({ onSceneActive }) => {
                                 defaultValue={[scene.transitionSpeed]}
                                 value={[scene.transitionSpeed]}
                                 min={1000}
-                                max={30000}
-                                step={500}
+                                max={300000} // Increased max to 5 minutes
+                                step={1000} // Changed step to 1 second
                                 onValueChange={(vals) => {
                                     // Just update local state for smoothness
                                     setScenes(prev => prev.map(s => s.id === scene.id ? { ...s, transitionSpeed: vals[0] } : s));
@@ -256,5 +267,9 @@ const _SAFELIST = [
   'from-orange-400 via-pink-500 to-blue-900',
   'from-blue-200 via-slate-300 to-emerald-400',
   'from-red-600 via-green-600 to-yellow-400',
-  'from-purple-900 via-blue-900 to-pink-500'
+  'from-purple-900 via-blue-900 to-pink-500',
+  'from-green-400 via-purple-600 to-fuchsia-500',
+  'from-violet-900 via-slate-900 to-indigo-950',
+  'from-amber-700 via-orange-900 to-yellow-900',
+  'from-stone-100 via-sky-100 to-orange-50'
 ];

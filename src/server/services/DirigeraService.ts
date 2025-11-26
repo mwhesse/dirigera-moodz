@@ -211,13 +211,30 @@ export class DirigeraService {
       
       for (const device of this.devices.values()) {
         try {
-          // Skip offline/off devices
-          if (!device.currentState.isOn) {
+          // Only control selected devices
+          if (!device.isSelected) {
+            continue;
+          }
+
+          // Skip offline/off devices unless we are explicitly turning them on
+          if (!device.currentState.isOn && update.isOn !== true) {
             this.logger.debug(`Skipping offline device: ${device.name} (${device.id})`);
             continue;
           }
+
+          // Handle isOn updates
+          if (update.isOn !== undefined) {
+            this.logger.debug(`🚨 LAMP COMMAND: ${device.name} - setIsOn(${update.isOn})`);
+            promises.push(
+              this.client!.lights.setIsOn({
+                id: device.id,
+                isOn: update.isOn
+              })
+            );
+            commandCount++;
+          }
           
-          // Handle color updates - only for color-capable lights that are on
+          // Handle color updates - only for color-capable lights that are on (or being turned on)
           if (update.color && device.capabilities.canChangeColor) {
             this.logger.debug(`🚨 LAMP COMMAND: ${device.name} - setLightColor(hue=${update.color.hue}, sat=${update.color.saturation})`);
             promises.push(
@@ -434,39 +451,41 @@ export class DirigeraService {
       return; // Skip offline devices
     }
 
-    try {
-      const promises: Promise<any>[] = [];
-      
-      // Set color if device supports it
-      if (update.color && device.capabilities.canChangeColor) {
-        this.logger.debug(`🚨 LAMP COMMAND: ${device.name} - setLightColor(hue=${update.color.hue}, sat=${update.color.saturation})`);
-        promises.push(
-          this.client.lights.setLightColor({
-            id: update.deviceId,
-            colorHue: Math.round(update.color.hue),
-            colorSaturation: update.color.saturation,
-            transitionTime: update.transitionTime
-          })
-        );
-      }
-      
-      // Set brightness if device supports it
-      if (update.brightness && device.capabilities.canChangeBrightness) {
-        const brightness = Math.round(Math.max(1, Math.min(100, update.brightness)));
-        this.logger.debug(`🚨 LAMP COMMAND: ${device.name} - setLightLevel(${brightness}%)`);
-        promises.push(
-          this.client.lights.setLightLevel({
-            id: update.deviceId,
-            lightLevel: brightness,
-            transitionTime: update.transitionTime
-          })
-        );
-      }
+    return this.commandQueue.add(async () => {
+      try {
+        const promises: Promise<any>[] = [];
+        
+        // Set color if device supports it
+        if (update.color && device.capabilities.canChangeColor) {
+          this.logger.debug(`🚨 LAMP COMMAND: ${device.name} - setLightColor(hue=${update.color.hue}, sat=${update.color.saturation})`);
+          promises.push(
+            this.client!.lights.setLightColor({
+              id: update.deviceId,
+              colorHue: Math.round(update.color.hue),
+              colorSaturation: update.color.saturation,
+              transitionTime: update.transitionTime
+            })
+          );
+        }
+        
+        // Set brightness if device supports it
+        if (update.brightness && device.capabilities.canChangeBrightness) {
+          const brightness = Math.round(Math.max(1, Math.min(100, update.brightness)));
+          this.logger.debug(`🚨 LAMP COMMAND: ${device.name} - setLightLevel(${brightness}%)`);
+          promises.push(
+            this.client!.lights.setLightLevel({
+              id: update.deviceId,
+              lightLevel: brightness,
+              transitionTime: update.transitionTime
+            })
+          );
+        }
 
-      await Promise.all(promises);
-    } catch (error) {
-      this.logger.error(`Failed to update single light ${device.name}:`, error);
-    }
+        await Promise.all(promises);
+      } catch (error) {
+        this.logger.error(`Failed to update single light ${device.name}:`, error);
+      }
+    });
   }
 
   toggleDeviceSelection(deviceId: string, isSelected: boolean): void {

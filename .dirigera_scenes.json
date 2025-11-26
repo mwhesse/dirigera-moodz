@@ -1,10 +1,30 @@
 {
   "tropical-twilight": {
-    "transitionSpeed": 30000,
-    "brightness": 70
+    "transitionSpeed": 61000,
+    "brightness": 27
+  },
+  "sukhumvit-nights": {
+    "transitionSpeed": 31000,
+    "brightness": 80
   },
   "la-sunset": {
-    "transitionSpeed": 9000,
-    "brightness": 44
+    "transitionSpeed": 33000,
+    "brightness": 32
+  },
+  "sunset-beach": {
+    "transitionSpeed": 90000,
+    "brightness": 39
+  },
+  "christmas-tree": {
+    "transitionSpeed": 23000,
+    "brightness": 90
+  },
+  "cyber-city": {
+    "transitionSpeed": 7000,
+    "brightness": 56
+  },
+  "japanese-whisky": {
+    "transitionSpeed": 54000,
+    "brightness": 24
   }
 }

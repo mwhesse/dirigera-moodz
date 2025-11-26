@@ -109,7 +109,7 @@ export const LightController: React.FC<LightControllerProps> = () => {
     }
   };
 
-  const updateLights = async (updates: { color?: { hue: number; saturation: number }; brightness?: number }) => {
+  const updateLights = async (updates: { color?: { hue: number; saturation: number }; brightness?: number; isOn?: boolean }) => {
     setError(null);
 
     try {
@@ -191,8 +191,16 @@ export const LightController: React.FC<LightControllerProps> = () => {
       {devices.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Connected Lights</CardTitle>
-            <CardDescription>Toggle which lights participate in the sync</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Connected Lights</CardTitle>
+                <CardDescription>Toggle which lights participate in the sync</CardDescription>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => updateLights({ isOn: true })}>
+                <Zap className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
+                Turn On
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {devices.map((device) => (
