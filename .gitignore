@@ -26,7 +26,7 @@
 .DS_Store
 *.pem
 
-.digirera_token
+.dirigera_token
 .dirigera_scenes.json
 .dirigera_selection.json
 
