@@ -145,17 +145,14 @@ export class SceneEngine {
     const devices = this.getEligibleDevices();
     if (devices.length === 0) return;
 
-    const promises = devices.map(device => {
-      const color = this.getRandomColorFromPalette();
-      return this.dirigeraService.updateSingleLight({
-        deviceId: device.id,
-        color: color,
-        brightness: this.currentScene!.brightness,
-        transitionTime: 500 // 0.5s initial snap
-      });
-    });
+    const updates = devices.map(device => ({
+      deviceId: device.id,
+      color: this.getRandomColorFromPalette(),
+      brightness: this.currentScene!.brightness,
+      transitionTime: 500 // 0.5s initial snap
+    }));
 
-    await Promise.allSettled(promises);
+    await this.dirigeraService.updateLightsBatch(updates);
   }
 
   private async driftLoop(): Promise<void> {

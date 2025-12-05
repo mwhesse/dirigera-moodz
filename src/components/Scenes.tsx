@@ -42,6 +42,7 @@ const SCENE_GRADIENTS: Record<string, string> = {
   'late-night-vibes': 'from-violet-900 via-slate-900 to-indigo-950',
   'japanese-whisky': 'from-amber-700 via-orange-900 to-yellow-900',
   'yoga-morning': 'from-stone-100 via-sky-100 to-orange-50',
+  'cotton-candy-sunset': 'from-pink-300 via-blue-300 to-purple-300',
 };
 
 export const Scenes: React.FC<ScenesProps> = ({ onSceneActive }) => {
@@ -271,5 +272,6 @@ const _SAFELIST = [
   'from-green-400 via-purple-600 to-fuchsia-500',
   'from-violet-900 via-slate-900 to-indigo-950',
   'from-amber-700 via-orange-900 to-yellow-900',
-  'from-stone-100 via-sky-100 to-orange-50'
+  'from-stone-100 via-sky-100 to-orange-50',
+  'from-pink-300 via-blue-300 to-purple-300'
 ];

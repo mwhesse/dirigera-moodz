@@ -463,6 +463,49 @@ export class DirigeraService {
     return this.isConnected && this.client !== null;
   }
 
+  async updateLightsBatch(updates: { deviceId: string, color?: any, brightness?: number, transitionTime?: number }[]): Promise<void> {
+    if (!this.client) {
+      // Not connected
+      return;
+    }
+
+    return this.commandQueue.add(async () => {
+      const promises: Promise<any>[] = [];
+      
+      for (const update of updates) {
+        const device = this.devices.get(update.deviceId);
+        // Skip if device not found or not selected
+        if (!device || !device.isSelected || !device.currentState.isOn) continue;
+
+        try {
+          if (update.color && device.capabilities.canChangeColor) {
+            promises.push(this.client!.lights.setLightColor({
+              id: update.deviceId,
+              colorHue: Math.round(update.color.hue),
+              colorSaturation: update.color.saturation,
+              transitionTime: update.transitionTime
+            }));
+          }
+          
+          if (update.brightness !== undefined && device.capabilities.canChangeBrightness) {
+            const brightness = Math.round(Math.max(1, Math.min(100, update.brightness)));
+            promises.push(this.client!.lights.setLightLevel({
+              id: update.deviceId,
+              lightLevel: brightness,
+              transitionTime: update.transitionTime
+            }));
+          }
+        } catch (error) {
+          this.logger.error(`Failed to prepare batch update for device ${update.deviceId}:`, error);
+        }
+      }
+      
+      if (promises.length > 0) {
+        await Promise.allSettled(promises);
+      }
+    });
+  }
+
   async updateSingleLight(update: { deviceId: string, color: any, brightness: number, transitionTime: number }): Promise<void> {
     if (!this.client) {
       throw new Error('DIRIGERA client not initialized');

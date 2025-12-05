@@ -316,5 +316,20 @@ export const SCENE_PRESETS: Scene[] = [
       { hue: 120, saturation: 0.2 }, // Soft Mint
       { hue: 40, saturation: 0.2 }   // Pale Peach
     ]
+  },
+  {
+    id: 'cotton-candy-sunset',
+    name: 'Cotton Candy Sunset',
+    description: 'Soft pinks and blues blend like a sweet sunset.',
+    type: 'drift',
+    transitionSpeed: 10000,
+    brightness: 70,
+    palette: [
+      { hue: 330, saturation: 0.6 }, // Pastel Pink
+      { hue: 210, saturation: 0.5 }, // Sky Blue
+      { hue: 280, saturation: 0.4 }, // Light Lavender
+      { hue: 350, saturation: 0.7 }, // Rose Pink
+      { hue: 180, saturation: 0.3 }  // Pale Aqua
+    ]
   }
 ];
