@@ -1,9 +1,13 @@
 // Load environment variables FIRST via side-effect import
 import './config/env';
 
-import express from 'express';
+import express, { Request, Response } from 'express';
+import next from 'next';
 import cors from 'cors';
 import helmet from 'helmet';
+import { createServer } from 'http';
+import { parse } from 'url';
+import path from 'path';
 import rateLimit from 'express-rate-limit';
 import { logger } from './config/logger';
 import { DirigeraService } from './services/DirigeraService';
@@ -20,12 +24,10 @@ class Server {
   private sceneEngine!: SceneEngine;
   private wsServer!: WebSocketServer;
   private port: number;
-  private wsPort: number;
 
   constructor() {
     this.app = express();
     this.port = parseInt(process.env.PORT || '3001', 10);
-    this.wsPort = parseInt(process.env.WS_PORT || '8080', 10);
     
     this.setupMiddleware();
     this.initializeServices();
@@ -40,10 +42,12 @@ class Server {
         directives: {
           defaultSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'"],
-          connectSrc: ["'self'", "ws:", "wss:"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"],
+          connectSrc: ["'self'", "ws:", "wss:", "http:", "https:"],
           mediaSrc: ["'self'"],
-          imgSrc: ["'self'", "data:"]
+          imgSrc: ["'self'", "data:", "blob:"],
+          fontSrc: ["'self'", "data:"],
+          upgradeInsecureRequests: null,
         }
       }
     }));
@@ -108,7 +112,7 @@ class Server {
       this.sceneEngine = new SceneEngine(this.dirigeraService, layoutService, logger);
 
       // Initialize WebSocket server
-      this.wsServer = new WebSocketServer(this.wsPort, this.syncEngine, this.dirigeraService, logger);
+      this.wsServer = new WebSocketServer({ noServer: true }, this.syncEngine, this.dirigeraService, this.sceneEngine, logger);
 
       logger.info('All services initialized successfully');
     } catch (error) {
@@ -188,14 +192,21 @@ class Server {
       }
 
       // Start HTTP server
-      this.app.listen(this.port, () => {
+      const httpServer = this.app.listen(this.port, () => {
         logger.info(`HTTP server running on port ${this.port}`);
-        logger.info(`WebSocket server running on port ${this.wsPort}`);
+        logger.info(`WebSocket server attached to HTTP server at /api/ws`);
         logger.info('Dirigera Moodz Server started successfully');
         
         // Log important URLs
         logger.info(`API Documentation: http://localhost:${this.port}/health`);
         logger.info(`Lights Status: http://localhost:${this.port}/api/lights/status`);
+      });
+
+      httpServer.on('upgrade', (request, socket, head) => {
+        const { pathname } = parse(request.url || '', true);
+        if (pathname === '/api/ws') {
+            this.wsServer.handleUpgrade(request, socket, head);
+        }
       });
 
       // Graceful shutdown handling

@@ -62,3 +62,19 @@ export interface WSMessage {
   type: string;
   data: any;
 }
+
+export interface Scene {
+  id: string;
+  name: string;
+  description: string;
+  palette: Color[]; // Re-add palette
+  type: 'drift' | 'static'; // Re-add type
+  transitionSpeed: number; // Re-add transitionSpeed
+  brightness: number; // Re-add brightness
+  spatial?: {
+    mode: 'linear' | 'radial' | 'random';
+    scale: number;
+    speed: number;
+    angle?: number;
+  };
+}

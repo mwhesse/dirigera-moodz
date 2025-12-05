@@ -7,15 +7,8 @@ import { Play, Square, Loader2, Sparkles, Maximize2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
-
-interface Scene {
-  id: string;
-  name: string;
-  description: string;
-  type: 'drift' | 'static';
-  transitionSpeed: number;
-  brightness: number;
-}
+import { useLightStore } from '@/lib/stores/lightStore';
+import { Scene } from '@/types'; // Import Scene from shared types
 
 interface ScenesProps {
   onSceneActive: (active: boolean) => void;
@@ -50,10 +43,32 @@ export const Scenes: React.FC<ScenesProps> = ({ onSceneActive, onOpenVisualizer 
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const lightStore = useLightStore() as any; // Workaround for persistent type error
+  const currentScene = lightStore.currentScene;
 
   useEffect(() => {
     fetchScenes();
   }, []);
+
+  // Sync local scenes state with global currentScene changes
+  useEffect(() => {
+    if (currentScene) {
+        setScenes(prevScenes => 
+            prevScenes.map(s => 
+                s.id === currentScene.id ? { ...s, ...currentScene } : s
+            )
+        );
+        // Also ensure currentSceneId is in sync
+        if (currentScene.id !== currentSceneId) {
+            setCurrentSceneId(currentScene.id);
+            onSceneActive(true);
+        }
+    } else if (currentSceneId !== null && currentScene === null) {
+        // If global state says no scene, but local thinks there is one, clear local
+        setCurrentSceneId(null);
+        onSceneActive(false);
+    }
+  }, [currentScene, currentSceneId, onSceneActive]);
 
   const fetchScenes = async () => {
     try {
@@ -62,6 +77,8 @@ export const Scenes: React.FC<ScenesProps> = ({ onSceneActive, onOpenVisualizer 
       if (data.success) {
         setScenes(data.scenes);
         setCurrentSceneId(data.currentSceneId);
+        const activeScene = data.scenes.find((s: Scene) => s.id === data.currentSceneId);
+        lightStore.setCurrentScene(activeScene || null);
         if (data.currentSceneId) {
           onSceneActive(true);
         }
@@ -82,6 +99,8 @@ export const Scenes: React.FC<ScenesProps> = ({ onSceneActive, onOpenVisualizer 
       const data = await response.json();
       if (data.success) {
         setCurrentSceneId(sceneId);
+        const activeScene = scenes.find(s => s.id === sceneId);
+        lightStore.setCurrentScene(activeScene || null);
         onSceneActive(true);
       }
     } catch (error) {
@@ -101,6 +120,7 @@ export const Scenes: React.FC<ScenesProps> = ({ onSceneActive, onOpenVisualizer 
       const data = await response.json();
       if (data.success) {
         setCurrentSceneId(null);
+        lightStore.setCurrentScene(null);
         onSceneActive(false);
       }
     } catch (error) {

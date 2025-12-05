@@ -8,8 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Mic, Laptop, AlertCircle, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080';
+import { getWebSocketUrl } from '@/lib/utils/websocket';
 
 interface AudioSyncProps {
   isActive: boolean;
@@ -34,7 +33,8 @@ export const AudioSync: React.FC<AudioSyncProps> = ({ isActive }) => {
   }, [isActive, isAnalyzing]);
 
   useEffect(() => {
-    wsClient.current = new WebSocketClient(WS_URL);
+    const wsUrl = getWebSocketUrl();
+    wsClient.current = new WebSocketClient(wsUrl);
     
     wsClient.current.on('connected', () => {
       console.log('WebSocket connected for audio-only mode');

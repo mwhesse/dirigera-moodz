@@ -1,6 +1,8 @@
-import { WebSocketServer as WSServer, WebSocket } from 'ws';
+import { WebSocketServer as WSServer, WebSocket, ServerOptions } from 'ws';
+import { Server } from 'http';
 import { SyncEngine } from './SyncEngine';
 import { DirigeraService } from './DirigeraService';
+import { SceneEngine } from './SceneEngine';
 import { WSMessage } from '../types';
 import { Logger } from 'winston';
 import { v4 as uuidv4 } from 'uuid';
@@ -16,23 +18,31 @@ export class WebSocketServer {
   private wss: WSServer;
   private syncEngine: SyncEngine;
   private dirigeraService: DirigeraService;
+  private sceneEngine: SceneEngine;
   private clients: Map<string, WebSocketClient> = new Map();
   private logger: Logger;
   private heartbeatInterval!: NodeJS.Timeout;
 
-  constructor(port: number, syncEngine: SyncEngine, dirigeraService: DirigeraService, logger: Logger) {
+  constructor(options: ServerOptions, syncEngine: SyncEngine, dirigeraService: DirigeraService, sceneEngine: SceneEngine, logger: Logger) {
     this.syncEngine = syncEngine;
     this.dirigeraService = dirigeraService;
+    this.sceneEngine = sceneEngine;
     this.logger = logger;
     this.wss = new WSServer({ 
-      port,
+      ...options,
       perMessageDeflate: false
     });
     this.initialize();
   }
 
+  public handleUpgrade(request: any, socket: any, head: any): void {
+    this.wss.handleUpgrade(request, socket, head, (ws) => {
+      this.wss.emit('connection', ws, request);
+    });
+  }
+
   private initialize(): void {
-    this.logger.info(`WebSocket server starting on port ${this.wss.options.port}`);
+    this.logger.info(`WebSocket server initialized`);
     
     // Subscribe to device updates from DirigeraService
     this.dirigeraService.on('deviceUpdate', (device) => {
@@ -48,6 +58,20 @@ export class WebSocketServer {
         type: 'DEVICES_UPDATE',
         data: devices
       });
+    });
+
+    // Subscribe to scene updates from SceneEngine
+    // (Assuming SceneEngine emits 'sceneUpdate')
+    // Wait, SceneEngine doesn't extend EventEmitter yet!
+    // I need to make sure SceneEngine extends EventEmitter first.
+    // But I can add the listener here optimistically or check if it's an emitter.
+    // SceneEngine needs to be updated to emit events.
+    // Let's assume SceneEngine is an EventEmitter now.
+    (this.sceneEngine as any).on('sceneUpdate', (scene: any) => {
+        this.broadcast({
+            type: 'SCENE_UPDATE',
+            data: scene
+        });
     });
 
     this.wss.on('connection', (ws, req) => {

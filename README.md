@@ -9,6 +9,10 @@ This application captures audio from your browser (tab audio or microphone) and 
 *   **IKEA Dirigera Integration**: Direct local control of your smart lights for minimal latency.
 *   **Customizable Effects**: Adjust sensitivity, color modes, and intensity.
 *   **Dynamic Mood Scenes**: Choose from a variety of preset scenes like "Savanna Sunset", "Arctic Aurora", "Bangkok Morning", "Sukhumvit Nights", and more, to instantly set the ambiance with themed light effects and gradients.
+*   **2D Room Layout Editor**: Visually position your lights on an interactive canvas, add virtual walls to define your room layout, toggle light labels, and control light participation in scenes directly from the map.
+*   **Spatial Dynamic Scenes**: Leverage the 2D room layout to create advanced lighting effects. Experience linear waves (e.g., "Deep Ocean"), radial pulses, or gradients (e.g., "Savanna Sunset") that travel across your physical lights based on their mapped positions.
+*   **Real-time Scene Visualizer**: A dynamic canvas that animates your light positions and colors in real-time. Automatically appears as a full-screen modal when a scene is playing, providing an immersive overview of your lighting effects.
+*   **Multi-Client Sync & Remote Access**: Connect multiple devices (e.g., PC, iPad, phone) to the dev server simultaneously. All clients remain synchronized, displaying live updates. Supports remote connections from devices on the same network.
 *   **Browser-based Audio Capture**: Works with any audio source (Spotify, YouTube, Apple Music, etc.) played in your browser.
 
 ## Tech Stack
@@ -52,7 +56,6 @@ This application captures audio from your browser (tab audio or microphone) and 
     
     # Server Configuration
     PORT=3000
-    WS_PORT=8080
     ```
 
 4.  Run the development server:
@@ -60,7 +63,7 @@ This application captures audio from your browser (tab audio or microphone) and 
     npm run dev
     ```
 
-5.  Open [http://localhost:3000](http://localhost:3000) in your browser.
+5.  Open [http://localhost:3000](http://localhost:3000) in your browser. For remote access from other devices on your local network, use `http://<YOUR_PC_IP>:3000`.
 
 ## Usage
 
@@ -71,16 +74,24 @@ This application captures audio from your browser (tab audio or microphone) and 
 3.  Press the physical **Action Button** on your Dirigera Hub when prompted.
 4.  Once connected, the app will save your access token locally for future sessions.
 
-### 2. Start Audio Sync
+### 2. Manage Lights & Layout
+
+1.  Click the **Layout Grid icon** in the top right corner to access the **Light Management** page.
+2.  In the **"Room Layout"** tab, drag your lights to their physical positions on the canvas.
+3.  Use "Add Wall" to define room boundaries.
+4.  Click the red/green dot on a light to toggle its participation in scenes.
+5.  Use the "Show Labels" toggle to display/hide light names.
+6.  Click **"Save Layout"** to persist your room configuration.
+
+### 3. Start Audio Sync
 
 1.  Click **"Start Audio Sync"**.
 2.  Select **"Tab Audio"** (recommended) or "Microphone" in the browser permission dialog.
     *   *Note: For best results, use "Tab Audio" and select the tab playing your music (e.g., Spotify Web Player).*
 3.  Your lights should now react to the music!
 
-### 3. Customize
+### 4. Customize
 
-Use the **Light Controller** sidebar to select which lights to sync.
 Use the **Settings** menu to tweak:
 *   **Sensitivity**: How reactive the lights are.
 *   **Color Mode**: Choose between Frequency mapping, Mood-based, or Random.
@@ -94,7 +105,8 @@ The application allows you to switch between Audio Sync mode and Dynamic Scenes 
 2.  Click on the **"Scenes"** tab to browse available mood scenes.
 3.  Click on any scene card (e.g., "Bangkok Morning", "L.A. Sunset") to activate it. The lights connected to your Dirigera Hub will transition to the selected scene's colors and effects.
 4.  To stop a scene, click the "Stop Scene" button at the top of the Scenes section.
-5.  To return to Audio Sync, click the **"Audio Sync"** tab.
+5.  To view the real-time visualization of the scene, either click the **"Visualizer"** button next to "Stop Scene", or click on the **active scene card** again. The visualizer will also open automatically when a new scene is started.
+6.  To return to Audio Sync, click the **"Audio Sync"** tab.
 
 ## Architecture
 
@@ -105,11 +117,13 @@ This app uses a **Custom Next.js Server** architecture to seamlessly integrate t
 *   **`src/components`**: React UI components (built with Shadcn UI and Tailwind).
 *   **`src/server`**: Backend services and controllers.
     *   **`DirigeraService`**: Manages communication with the IKEA Hub.
-    *   **`SceneEngine`**: Handles the logic for dynamic scenes (drifting colors, transitions).
+    *   **`SceneEngine`**: Handles the logic for dynamic scenes (drifting colors, transitions), now enhanced with spatial awareness.
     *   **`SyncEngine`**: processes audio data and syncs lights in real-time.
+    *   **`LayoutService`**: Manages the persistence of light position and room layout data.
 *   **`src/lib`**: Client-side utilities and state management (Zustand).
 *   **Communication**: A WebSocket connection is established between the client (for audio data transmission) and the server (for light control commands) to ensure low latency.
 
 ## License
 
 [MIT](LICENSE)
+

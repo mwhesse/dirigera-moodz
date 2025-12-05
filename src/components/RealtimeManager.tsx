@@ -4,19 +4,13 @@
 import { useEffect, useRef } from 'react';
 import { useLightStore } from '@/lib/stores/lightStore';
 import { WebSocketClient } from '@/lib/services/WebSocketClient';
+import { getWebSocketUrl } from '@/lib/utils/websocket';
 
 const API_BASE_URL = '/api';
 
-const getWebSocketUrl = () => {
-  if (typeof window === 'undefined') return 'ws://localhost:8080';
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = window.location.hostname;
-  const port = '8080'; 
-  return `${protocol}//${host}:${port}`;
-};
-
 export function RealtimeManager() {
-  const { updateDevice, updateDevices, setDevices, setConnection } = useLightStore();
+  const isConnected = useRef(false);
+  const { updateDevice, updateDevices, setDevices, setConnection, updateCurrentScene } = useLightStore();
   const wsClient = useRef<WebSocketClient | null>(null);
 
   useEffect(() => {
@@ -37,27 +31,40 @@ export function RealtimeManager() {
     fetchInitialDevices();
 
     // 2. Create WebSocket connection
-    const wsUrl = getWebSocketUrl();
-    wsClient.current = new WebSocketClient(wsUrl);
+    if (!isConnected.current) {
+      const wsUrl = getWebSocketUrl();
+      console.log('Connecting to WebSocket:', wsUrl);
+      
+      wsClient.current = new WebSocketClient(wsUrl);
+      isConnected.current = true;
 
-    // Listen for single device update
-    wsClient.current.on('DEVICE_UPDATE', (device) => {
-      updateDevice(device.id, device);
-    });
+      // Listen for single device update
+      wsClient.current.on('DEVICE_UPDATE', (device) => {
+        updateDevice(device.id, device);
+      });
 
-    // Listen for batch device updates
-    wsClient.current.on('DEVICES_UPDATE', (devices) => {
-      updateDevices(devices);
-    });
+              // Listen for batch device updates
+              wsClient.current.on('DEVICES_UPDATE', (devices) => {
+                  updateDevices(devices);
+              });
+      
+        // Listen for scene updates
+        wsClient.current.on('SCENE_UPDATE', (scene) => {
+            updateCurrentScene(scene);
+        });
+    }
 
     // Cleanup
     return () => {
       if (wsClient.current) {
+        console.log('Cleaning up WebSocket connection');
         wsClient.current.destroy();
         wsClient.current = null;
+        isConnected.current = false;
       }
     };
-  }, [updateDevice, updateDevices, setDevices, setConnection]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array to run once
 
   return null; // This component renders nothing
 }

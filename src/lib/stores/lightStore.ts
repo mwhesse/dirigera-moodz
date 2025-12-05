@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Device, SyncSettings } from '@/types';
+import { Device, SyncSettings, Scene } from '@/types';
 
 interface LightState {
   // Connection status
@@ -13,6 +13,9 @@ interface LightState {
   
   // Sync settings
   syncSettings: SyncSettings;
+  
+  // Current active scene
+  currentScene: Scene | null;
   
   // Real-time data
   lastBeatTime: number | null;
@@ -33,6 +36,8 @@ interface LightState {
   setBeatData: (timestamp: number) => void;
   setFrequencyData: (data: any) => void;
   setServerStats: (stats: any) => void;
+  setCurrentScene: (scene: Scene | null) => void;
+  updateCurrentScene: (updates: Partial<Scene>) => void;
   toggleDeviceSelection: (deviceId: string, isSelected: boolean) => Promise<void>;
   reset: () => void;
 }
@@ -58,6 +63,8 @@ export const useLightStore = create<LightState>((set, get) => ({
   deviceCount: 0,
   
   syncSettings: defaultSyncSettings,
+  
+  currentScene: null,
   
   lastBeatTime: null,
   currentFrequencyData: null,
@@ -193,6 +200,17 @@ export const useLightStore = create<LightState>((set, get) => ({
     set({ serverStats: stats });
   },
 
+  setCurrentScene: (scene: Scene | null) => {
+    set({ currentScene: scene });
+  },
+
+  updateCurrentScene: (updates: Partial<Scene>) => {
+    const { currentScene } = get();
+    if (currentScene) {
+      set({ currentScene: { ...currentScene, ...updates } });
+    }
+  },
+
   toggleDeviceSelection: async (deviceId: string, isSelected: boolean) => {
     const state = get();
     const updatedDevices = state.devices.map(d => 
@@ -233,3 +251,5 @@ export const useLightStore = create<LightState>((set, get) => ({
     });
   }
 }));
+
+// Added a comment to trigger re-compilation

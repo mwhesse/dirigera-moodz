@@ -11,9 +11,10 @@ import { Label } from '@/components/ui/label';
 interface LightMapProps {
   editable?: boolean;
   className?: string;
+  isFlipped?: boolean;
 }
 
-export function LightMap({ editable = false, className = '' }: LightMapProps) {
+export function LightMap({ editable = false, className = '', isFlipped = false }: LightMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { layout, fetchLayout, saveLayout, updateLightPosition, addWall, updateWall, removeWall } = useLayoutStore();
   const { devices, toggleDeviceSelection } = useLightStore();
@@ -101,7 +102,7 @@ export function LightMap({ editable = false, className = '' }: LightMapProps) {
       
       <div 
         ref={containerRef}
-        className="relative w-full aspect-video bg-slate-900 rounded-lg overflow-hidden border border-slate-800 touch-none"
+        className={`relative w-full aspect-video bg-slate-900 rounded-lg overflow-hidden border border-slate-800 touch-none transition-transform duration-500 ${isFlipped ? 'rotate-180' : ''}`}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
@@ -195,7 +196,7 @@ export function LightMap({ editable = false, className = '' }: LightMapProps) {
               </div>
               {showLabels && (
                 <div
-                  className="absolute text-xs text-white text-center font-medium pointer-events-none select-none text-shadow-sm"
+                  className={`absolute text-xs text-white text-center font-medium pointer-events-none select-none text-shadow-sm transition-transform duration-500 ${isFlipped ? 'rotate-180' : ''}`}
                   style={{ 
                     left: `${x}%`, 
                     top: `${y + 3}%`, // Position below light

@@ -5,10 +5,11 @@ import { SCENE_PRESETS, Scene } from '../config/scenes';
 import { Color } from '../types';
 import fs from 'fs';
 import path from 'path';
+import { EventEmitter } from 'events';
 
 const SCENES_FILE = path.join(process.cwd(), '.dirigera_scenes.json');
 
-export class SceneEngine {
+export class SceneEngine extends EventEmitter {
   private dirigeraService: DirigeraService;
   private layoutService: LayoutService;
   private logger: Logger;
@@ -19,6 +20,7 @@ export class SceneEngine {
   private startTime: number = 0;
 
   constructor(dirigeraService: DirigeraService, layoutService: LayoutService, logger: Logger) {
+    super();
     this.dirigeraService = dirigeraService;
     this.layoutService = layoutService;
     this.logger = logger;
@@ -99,7 +101,9 @@ export class SceneEngine {
     }
 
     this.saveSceneOverrides();
-    return this.scenes[index];
+    const updatedScene = this.scenes[index];
+    this.emit('sceneUpdate', updatedScene);
+    return updatedScene;
   }
 
   startScene(sceneId: string): boolean {

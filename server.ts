@@ -41,15 +41,7 @@ app.prepare().then(async () => {
   const sceneEngine = new SceneEngine(dirigeraService, layoutService, logger);
   
   // We need to modify the CustomWSServer to accept an existing http server or port
-  // For now, let's keep it on a separate port if the original code demands it, 
-  // OR we can instantiate it with the httpServer if we refactor.
-  // Looking at the original code, it takes a 'port'. 
-  // Let's run it on 8080 as before to minimize friction, or refactor.
-  // Refactoring to same port is better for "Single App".
-  // But the CustomWSServer implementation creates its own new WebSocket.Server({ port }).
-  // Let's run it on the separate port for now to ensure stability.
-  const wsPort = parseInt(process.env.WS_PORT || '8080', 10);
-  const wsServer = new CustomWSServer(wsPort, syncEngine, dirigeraService, logger);
+  const wsServer = new CustomWSServer({ noServer: true }, syncEngine, dirigeraService, sceneEngine, logger);
 
   // Middleware
   server.use(helmet({
@@ -58,10 +50,12 @@ app.prepare().then(async () => {
         directives: {
           defaultSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'"],
-          connectSrc: ["'self'", "ws:", "wss:"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:"],
+          connectSrc: ["'self'", "ws:", "wss:", "http:", "https:"],
           mediaSrc: ["'self'"],
-          imgSrc: ["'self'", "data:"]
+          imgSrc: ["'self'", "data:", "blob:"],
+          fontSrc: ["'self'", "data:"],
+          upgradeInsecureRequests: null, // Disable auto-upgrade to HTTPS which breaks local LAN
         }
     }
   }));
@@ -111,6 +105,18 @@ app.prepare().then(async () => {
 
   httpServer.listen(port, '0.0.0.0', () => {
     logger.info(`> Ready on http://0.0.0.0:${port}`);
-    logger.info(`> WebSocket Server on port ${wsPort}`);
+    logger.info(`> WebSocket Server attached to HTTP server`);
+  });
+
+  httpServer.on('upgrade', (request, socket, head) => {
+    const { pathname } = parse(request.url || '', true);
+    
+    if (pathname === '/api/ws') {
+        wsServer.handleUpgrade(request, socket, head);
+        return;
+    }
+    
+    // For Next.js HMR, we let it fall through (Next.js attaches its own upgrade handler)
+    // If we don't handle it, and Next.js is attached, it should be fine.
   });
 });
