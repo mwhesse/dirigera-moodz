@@ -12,10 +12,10 @@ import { Switch } from "@/components/ui/switch"
 const API_BASE_URL = '/api';
 
 interface LightControllerProps {
-  devices: Device[];
+  className?: string;
 }
 
-export const LightController: React.FC<LightControllerProps> = () => {
+export const LightController: React.FC<LightControllerProps> = ({ className }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [testingDevice, setTestingDevice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +26,8 @@ export const LightController: React.FC<LightControllerProps> = () => {
     devices,
     setConnection, 
     setConnecting, 
-    setDevices 
+    setDevices,
+    toggleDeviceSelection
   } = useLightStore();
 
   // Discover devices on component mount
@@ -61,24 +62,6 @@ export const LightController: React.FC<LightControllerProps> = () => {
     }
   };
 
-  const toggleDeviceSelection = async (deviceId: string, isSelected: boolean) => {
-    const updatedDevices = devices.map(d => 
-      d.id === deviceId ? { ...d, isSelected } : d
-    );
-    setDevices(updatedDevices);
-
-    const selectedIds = updatedDevices.filter(d => d.isSelected).map(d => d.id);
-
-    try {
-      await fetch(`${API_BASE_URL}/lights/selection`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ selectedLights: selectedIds })
-      });
-    } catch (err) {
-      console.error('Error updating selection:', err);
-    }
-  };
 
   const testLights = async (testType: 'rainbow' | 'pulse' | 'strobe') => {
     setTestingDevice(testType);
@@ -106,6 +89,18 @@ export const LightController: React.FC<LightControllerProps> = () => {
       console.error(`Error running ${testType} test:`, err);
     } finally {
       setTestingDevice(null);
+    }
+  };
+
+  const stopTest = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/lights/test/stop`, {
+        method: 'POST',
+      });
+      // setTestingDevice(null) will happen via the testLights finally block
+      // when the server returns the response after stopping
+    } catch (err) {
+      console.error('Error stopping test:', err);
     }
   };
 
@@ -294,30 +289,42 @@ export const LightController: React.FC<LightControllerProps> = () => {
           <CardTitle>Light Tests</CardTitle>
           <CardDescription>Verify your lights are working correctly</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-3 gap-3">
-          <Button
-            onClick={() => testLights('rainbow')}
-            disabled={testingDevice === 'rainbow'}
-            className="bg-gradient-to-r from-red-500 via-yellow-500 to-purple-500 hover:opacity-90 text-white border-none"
-          >
-            {testingDevice === 'rainbow' ? 'Running...' : 'Rainbow'}
-          </Button>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            <Button
+              onClick={() => testLights('rainbow')}
+              disabled={!!testingDevice}
+              className="bg-gradient-to-r from-red-500 via-yellow-500 to-purple-500 hover:opacity-90 text-white border-none"
+            >
+              {testingDevice === 'rainbow' ? 'Running...' : 'Rainbow'}
+            </Button>
+            
+            <Button
+              onClick={() => testLights('pulse')}
+              disabled={!!testingDevice}
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              {testingDevice === 'pulse' ? 'Running...' : 'Pulse'}
+            </Button>
+            
+            <Button
+              onClick={() => testLights('strobe')}
+              disabled={!!testingDevice}
+              variant="destructive"
+            >
+              {testingDevice === 'strobe' ? 'Running...' : 'Strobe'}
+            </Button>
+          </div>
           
-          <Button
-            onClick={() => testLights('pulse')}
-            disabled={testingDevice === 'pulse'}
-            className="bg-blue-500 hover:bg-blue-600 text-white"
-          >
-            {testingDevice === 'pulse' ? 'Running...' : 'Pulse'}
-          </Button>
-          
-          <Button
-            onClick={() => testLights('strobe')}
-            disabled={testingDevice === 'strobe'}
-            variant="destructive"
-          >
-            {testingDevice === 'strobe' ? 'Running...' : 'Strobe'}
-          </Button>
+          {testingDevice && (
+            <Button 
+              variant="outline" 
+              className="w-full border-destructive text-destructive hover:bg-destructive/10"
+              onClick={stopTest}
+            >
+              Stop Test
+            </Button>
+          )}
         </CardContent>
       </Card>
 

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Play, Square, Loader2, Sparkles } from "lucide-react"
+import { Play, Square, Loader2, Sparkles, Maximize2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
@@ -19,6 +19,7 @@ interface Scene {
 
 interface ScenesProps {
   onSceneActive: (active: boolean) => void;
+  onOpenVisualizer: () => void;
 }
 
 const SCENE_GRADIENTS: Record<string, string> = {
@@ -45,7 +46,7 @@ const SCENE_GRADIENTS: Record<string, string> = {
   'cotton-candy-sunset': 'from-pink-300 via-blue-300 to-purple-300',
 };
 
-export const Scenes: React.FC<ScenesProps> = ({ onSceneActive }) => {
+export const Scenes: React.FC<ScenesProps> = ({ onSceneActive, onOpenVisualizer }) => {
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -137,15 +138,26 @@ export const Scenes: React.FC<ScenesProps> = ({ onSceneActive }) => {
           Dynamic Scenes
         </h2>
         {currentSceneId && (
-          <Button 
-            variant="destructive" 
-            size="sm" 
-            onClick={stopScene}
-            disabled={isLoading}
-          >
-            <Square className="w-4 h-4 mr-2" />
-            Stop Scene
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenVisualizer}
+              title="Open Visualizer"
+            >
+              <Maximize2 className="w-4 h-4 mr-2" />
+              Visualizer
+            </Button>
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              onClick={stopScene}
+              disabled={isLoading}
+            >
+              <Square className="w-4 h-4 mr-2" />
+              Stop Scene
+            </Button>
+          </div>
         )}
       </div>
 
@@ -159,7 +171,7 @@ export const Scenes: React.FC<ScenesProps> = ({ onSceneActive }) => {
                 "overflow-hidden cursor-pointer transition-all border-2 group",
                 isSelected ? 'border-primary ring-2 ring-primary/20 scale-[1.02]' : 'border-transparent hover:scale-[1.02]'
                 )}
-                onClick={() => !isSelected && startScene(scene.id)}
+                onClick={() => isSelected ? onOpenVisualizer() : startScene(scene.id)}
             >
                 <div className={cn(
                 "h-24 w-full bg-gradient-to-r opacity-80 transition-opacity",

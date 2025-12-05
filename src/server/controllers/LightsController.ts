@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { DirigeraService } from '../services/DirigeraService';
 import { SyncEngine } from '../services/SyncEngine';
 import { SceneEngine } from '../services/SceneEngine';
+import { LayoutService } from '../services/LayoutService';
 import { SCENE_PRESETS } from '../config/scenes';
 import { Logger } from 'winston';
 
@@ -9,14 +10,40 @@ export class LightsController {
   private dirigeraService: DirigeraService;
   private syncEngine: SyncEngine;
   private sceneEngine: SceneEngine;
+  private layoutService: LayoutService;
   private logger: Logger;
+  private isTestRunning: boolean = false;
 
   constructor(dirigeraService: DirigeraService, syncEngine: SyncEngine, sceneEngine: SceneEngine, logger: Logger) {
     this.dirigeraService = dirigeraService;
     this.syncEngine = syncEngine;
     this.sceneEngine = sceneEngine;
+    this.layoutService = LayoutService.getInstance();
     this.logger = logger;
   }
+
+  // GET /api/layout
+  getLayout = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const layout = this.layoutService.getLayout();
+      res.json(layout);
+    } catch (error) {
+      this.logger.error('Error getting layout:', error);
+      res.status(500).json({ error: 'Failed to get layout' });
+    }
+  };
+
+  // POST /api/layout
+  saveLayout = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const layout = req.body;
+      await this.layoutService.saveLayout(layout);
+      res.json({ success: true });
+    } catch (error) {
+      this.logger.error('Error saving layout:', error);
+      res.status(500).json({ error: 'Failed to save layout' });
+    }
+  };
 
   // POST /api/lights/auth
   authenticateDirigera = async (req: Request, res: Response): Promise<void> => {
@@ -308,7 +335,9 @@ export class LightsController {
   // POST /api/lights/test
   testLights = async (req: Request, res: Response): Promise<void> => {
     try {
+      this.logger.info(`Starting test: ${req.body.testType}`);
       this.sceneEngine.stop(); // Stop any scenes
+      this.isTestRunning = true;
       const { testType } = req.body;
 
       switch (testType) {
@@ -328,6 +357,7 @@ export class LightsController {
           return;
       }
 
+      this.logger.info(`Test ${testType} completed naturally.`);
       res.json({
         success: true,
         message: `${testType} test completed successfully`
@@ -336,6 +366,36 @@ export class LightsController {
       this.logger.error(`Error running ${req.body.testType} test:`, error);
       res.status(500).json({ 
         error: `Failed to run ${req.body.testType} test`,
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    } finally {
+      this.isTestRunning = false;
+    }
+  };
+
+  // POST /api/lights/test/stop
+  stopTest = async (req: Request, res: Response): Promise<void> => {
+    try {
+      this.logger.info('Received stop test request');
+      this.isTestRunning = false;
+      this.sceneEngine.stop(); // Also ensure scenes are stopped
+      
+      // Reset lights to neutral state
+      await this.dirigeraService.updateLights({
+        color: { hue: 60, saturation: 0.1 },
+        brightness: 50,
+        transitionTime: 500
+      });
+
+      this.logger.info('Test stopped successfully');
+      res.json({
+        success: true,
+        message: 'Test stopped'
+      });
+    } catch (error) {
+      this.logger.error('Error stopping test:', error);
+      res.status(500).json({ 
+        error: 'Failed to stop test',
         details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
@@ -435,6 +495,10 @@ export class LightsController {
     this.logger.info('Running rainbow test...');
     
     for (let hue = 0; hue < 360; hue += 30) {
+      if (!this.isTestRunning) {
+        this.logger.info('Rainbow test interrupted by stop flag.');
+        break;
+      }
       await this.dirigeraService.updateLights({
         color: { hue, saturation: 1 },
         brightness: 80,
@@ -444,17 +508,20 @@ export class LightsController {
     }
     
     // Return to neutral
-    await this.dirigeraService.updateLights({
-      color: { hue: 60, saturation: 0.3 },
-      brightness: 50,
-      transitionTime: 500
-    });
+    if (this.isTestRunning) { // Only reset if not stopped (stopTest handles its own reset)
+       await this.dirigeraService.updateLights({
+        color: { hue: 60, saturation: 0.3 },
+        brightness: 50,
+        transitionTime: 500
+      });
+    }
   }
 
   private async runPulseTest(): Promise<void> {
     this.logger.info('Running pulse test...');
     
     for (let i = 0; i < 5; i++) {
+      if (!this.isTestRunning) break;
       await this.dirigeraService.executeCommand({
         type: 'PULSE',
         brightness: 100,

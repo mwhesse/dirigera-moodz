@@ -1,5 +1,6 @@
 import { WebSocketServer as WSServer, WebSocket } from 'ws';
 import { SyncEngine } from './SyncEngine';
+import { DirigeraService } from './DirigeraService';
 import { WSMessage } from '../types';
 import { Logger } from 'winston';
 import { v4 as uuidv4 } from 'uuid';
@@ -14,12 +15,14 @@ interface WebSocketClient {
 export class WebSocketServer {
   private wss: WSServer;
   private syncEngine: SyncEngine;
+  private dirigeraService: DirigeraService;
   private clients: Map<string, WebSocketClient> = new Map();
   private logger: Logger;
   private heartbeatInterval!: NodeJS.Timeout;
 
-  constructor(port: number, syncEngine: SyncEngine, logger: Logger) {
+  constructor(port: number, syncEngine: SyncEngine, dirigeraService: DirigeraService, logger: Logger) {
     this.syncEngine = syncEngine;
+    this.dirigeraService = dirigeraService;
     this.logger = logger;
     this.wss = new WSServer({ 
       port,
@@ -31,6 +34,22 @@ export class WebSocketServer {
   private initialize(): void {
     this.logger.info(`WebSocket server starting on port ${this.wss.options.port}`);
     
+    // Subscribe to device updates from DirigeraService
+    this.dirigeraService.on('deviceUpdate', (device) => {
+      this.broadcast({
+        type: 'DEVICE_UPDATE',
+        data: device
+      });
+    });
+
+    // Subscribe to batch device updates
+    this.dirigeraService.on('devicesUpdate', (devices) => {
+      this.broadcast({
+        type: 'DEVICES_UPDATE',
+        data: devices
+      });
+    });
+
     this.wss.on('connection', (ws, req) => {
       const clientId = uuidv4();
       const clientIP = req.socket.remoteAddress;

@@ -29,6 +29,7 @@
 .dirigera_token
 .dirigera_scenes.json
 .dirigera_selection.json
+/data/layout.json
 
 # debug
 npm-debug.log*

@@ -27,11 +27,13 @@ interface LightState {
   setDevices: (devices: Device[]) => void;
   addDevice: (device: Device) => void;
   updateDevice: (deviceId: string, updates: Partial<Device>) => void;
+  updateDevices: (updates: Partial<Device>[]) => void;
   removeDevice: (deviceId: string) => void;
   setSyncSettings: (settings: Partial<SyncSettings>) => void;
   setBeatData: (timestamp: number) => void;
   setFrequencyData: (data: any) => void;
   setServerStats: (stats: any) => void;
+  toggleDeviceSelection: (deviceId: string, isSelected: boolean) => Promise<void>;
   reset: () => void;
 }
 
@@ -43,6 +45,8 @@ const defaultSyncSettings: SyncSettings = {
   beatDetectionThreshold: 0.6,
   colorTransitionSpeed: 200
 };
+
+const API_BASE_URL = '/api'; // Assuming API is relative to the client host
 
 export const useLightStore = create<LightState>((set, get) => ({
   // Initial state
@@ -130,6 +134,35 @@ export const useLightStore = create<LightState>((set, get) => ({
     }
   },
 
+  updateDevices: (updates: Partial<Device>[]) => {
+    const devices = get().devices;
+    const deviceMap = new Map(devices.map(d => [d.id, d]));
+    let hasChanges = false;
+
+    updates.forEach(update => {
+      const device = deviceMap.get(update.id!);
+      if (device) {
+        deviceMap.set(update.id!, {
+          ...device,
+          ...update,
+          currentState: {
+            ...device.currentState,
+            ...(update.currentState || {})
+          },
+          capabilities: {
+            ...device.capabilities,
+            ...(update.capabilities || {})
+          }
+        });
+        hasChanges = true;
+      }
+    });
+
+    if (hasChanges) {
+      set({ devices: Array.from(deviceMap.values()) });
+    }
+  },
+
   removeDevice: (deviceId: string) => {
     const devices = get().devices;
     const filteredDevices = devices.filter(d => d.id !== deviceId);
@@ -158,6 +191,28 @@ export const useLightStore = create<LightState>((set, get) => ({
 
   setServerStats: (stats: any) => {
     set({ serverStats: stats });
+  },
+
+  toggleDeviceSelection: async (deviceId: string, isSelected: boolean) => {
+    const state = get();
+    const updatedDevices = state.devices.map(d => 
+      d.id === deviceId ? { ...d, isSelected } : d
+    );
+    set({ devices: updatedDevices });
+
+    const selectedIds = updatedDevices.filter(d => d.isSelected).map(d => d.id);
+
+    try {
+      await fetch(`${API_BASE_URL}/lights/selection`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selectedLights: selectedIds })
+      });
+    } catch (err) {
+      console.error('Error updating selection:', err);
+      // Revert local state if API call fails
+      set({ devices: state.devices });
+    }
   },
 
   reset: () => {

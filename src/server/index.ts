@@ -1,17 +1,17 @@
+// Load environment variables FIRST via side-effect import
+import './config/env';
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 import { logger } from './config/logger';
 import { DirigeraService } from './services/DirigeraService';
 import { SyncEngine } from './services/SyncEngine';
 import { SceneEngine } from './services/SceneEngine';
 import { WebSocketServer } from './services/WebSocketServer';
 import { LightsController } from './controllers/LightsController';
-
-// Load environment variables
-dotenv.config();
+import { LayoutService } from './services/LayoutService';
 
 class Server {
   private app: express.Application;
@@ -41,7 +41,7 @@ class Server {
           defaultSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           scriptSrc: ["'self'"],
-          connectSrc: ["'self'", "ws://localhost:8080", "wss://localhost:8080"],
+          connectSrc: ["'self'", "ws:", "wss:"],
           mediaSrc: ["'self'"],
           imgSrc: ["'self'", "data:"]
         }
@@ -99,14 +99,16 @@ class Server {
         gatewayIP: process.env.DIRIGERA_GATEWAY_IP
       }, logger);
 
+      const layoutService = LayoutService.getInstance();
+
       // Initialize sync engine
       this.syncEngine = new SyncEngine(this.dirigeraService, logger);
 
       // Initialize scene engine
-      this.sceneEngine = new SceneEngine(this.dirigeraService, logger);
+      this.sceneEngine = new SceneEngine(this.dirigeraService, layoutService, logger);
 
       // Initialize WebSocket server
-      this.wsServer = new WebSocketServer(this.wsPort, this.syncEngine, logger);
+      this.wsServer = new WebSocketServer(this.wsPort, this.syncEngine, this.dirigeraService, logger);
 
       logger.info('All services initialized successfully');
     } catch (error) {

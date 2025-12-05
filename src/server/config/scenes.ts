@@ -14,6 +14,13 @@ export interface Scene {
   transitionSpeed: number;
   /** Average brightness for the scene (0-100) */
   brightness: number;
+  /** Spatial effect configuration */
+  spatial?: {
+    mode: 'linear' | 'radial' | 'random';
+    scale: number; // 0.1 to 5.0 - Frequency of the wave across the room
+    speed: number; // 0.1 to 5.0 - Animation speed multiplier
+    angle?: number; // 0-360 - For linear waves
+  };
 }
 
 export const SCENE_PRESETS: Scene[] = [
@@ -30,7 +37,13 @@ export const SCENE_PRESETS: Scene[] = [
       { hue: 45, saturation: 0.7 },  // Gold
       { hue: 340, saturation: 0.4 }, // Soft Warm Purple (dusk)
       { hue: 20, saturation: 0.6 }   // Soft Amber
-    ]
+    ],
+    spatial: {
+      mode: 'linear',
+      scale: 0.5,
+      speed: 0.2,
+      angle: 90 // Vertical gradient (Top to bottom)
+    }
   },
   {
     id: 'arctic-aurora',
@@ -45,7 +58,13 @@ export const SCENE_PRESETS: Scene[] = [
       { hue: 260, saturation: 0.7 }, // Purple
       { hue: 160, saturation: 0.8 }, // Teal/Green
       { hue: 240, saturation: 0.9 }  // Deep Blue
-    ]
+    ],
+    spatial: {
+      mode: 'linear',
+      scale: 0.3,
+      speed: 0.1,
+      angle: 45 // Diagonal
+    }
   },
   {
     id: 'tropical-twilight',
@@ -105,7 +124,13 @@ export const SCENE_PRESETS: Scene[] = [
       { hue: 190, saturation: 0.9 }, // Aqua
       { hue: 240, saturation: 1.0 }, // Pure Blue
       { hue: 200, saturation: 0.6 }  // Gray-Blue
-    ]
+    ],
+    spatial: {
+      mode: 'linear',
+      scale: 0.4,
+      speed: 0.15,
+      angle: 0 // Horizontal wave
+    }
   },
   {
     id: 'forest-morning',

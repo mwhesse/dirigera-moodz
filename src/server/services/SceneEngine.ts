@@ -1,6 +1,8 @@
 import { DirigeraService } from './DirigeraService';
+import { LayoutService } from './LayoutService';
 import { Logger } from 'winston';
 import { SCENE_PRESETS, Scene } from '../config/scenes';
+import { Color } from '../types';
 import fs from 'fs';
 import path from 'path';
 
@@ -8,14 +10,17 @@ const SCENES_FILE = path.join(process.cwd(), '.dirigera_scenes.json');
 
 export class SceneEngine {
   private dirigeraService: DirigeraService;
+  private layoutService: LayoutService;
   private logger: Logger;
   private activeInterval: NodeJS.Timeout | null = null;
   private currentScene: Scene | null = null;
   private isRunning = false;
   private scenes: Scene[];
+  private startTime: number = 0;
 
-  constructor(dirigeraService: DirigeraService, logger: Logger) {
+  constructor(dirigeraService: DirigeraService, layoutService: LayoutService, logger: Logger) {
     this.dirigeraService = dirigeraService;
+    this.layoutService = layoutService;
     this.logger = logger;
     // Initialize with presets
     this.scenes = JSON.parse(JSON.stringify(SCENE_PRESETS)); // Deep copy
@@ -107,6 +112,7 @@ export class SceneEngine {
     this.stop(); // Stop any existing scene
     this.currentScene = scene;
     this.isRunning = true;
+    this.startTime = Date.now();
     this.logger.info(`Starting scene: ${scene.name}`);
 
     // Initial setup
@@ -114,12 +120,18 @@ export class SceneEngine {
 
     // Start the loop
     if (scene.type === 'drift') {
-      // For drift, we update lights periodically.
-      // We want updates to be staggered and organic.
-      // Let's set an interval that updates a subset of lights or all lights with random timing.
+      // For spatial scenes, we need a faster loop to animate the wave smoothly
+      // The transition time in the spatial calculation will handle the smoothness on the light side,
+      // but we need to update the target often enough to move the wave.
+      const intervalTime = scene.spatial ? 1000 : scene.transitionSpeed / 2;
+      
       this.activeInterval = setInterval(() => {
-        this.driftLoop();
-      }, scene.transitionSpeed / 2); // Update frequently enough to keep it moving, but relies on long transition times
+        if (scene.spatial) {
+          this.spatialLoop();
+        } else {
+          this.driftLoop();
+        }
+      }, intervalTime);
     }
 
     return true;
@@ -180,6 +192,110 @@ export class SceneEngine {
     });
 
     await Promise.allSettled(promises);
+  }
+
+  private async spatialLoop(): Promise<void> {
+    if (!this.currentScene || !this.isRunning || !this.currentScene.spatial) return;
+
+    const devices = this.getEligibleDevices();
+    const layout = this.layoutService.getLayout();
+    const currentTime = Date.now();
+    const elapsedTime = (currentTime - this.startTime) / 1000; // Seconds
+
+    const promises = devices.map(device => {
+      // Get position or default to random static position if not placed (using hash of ID for stability)
+      const pos = layout.lights.find(l => l.id === device.id) || {
+        x: (device.id.charCodeAt(0) % 100),
+        y: (device.id.charCodeAt(device.id.length - 1) % 100)
+      };
+
+      const color = this.getSpatialColor(pos.x, pos.y, elapsedTime, this.currentScene!);
+      
+      // For spatial effects, we want relatively quick transitions to follow the wave,
+      // but smooth enough to not be jerky. 
+      // 1s - 2s is usually good for "drift", but if the wave is fast, we need faster updates.
+      // Let's use a fixed transition time of 1.5s for now, updated every 1s.
+      return this.dirigeraService.updateSingleLight({
+        deviceId: device.id,
+        color: color,
+        brightness: this.currentScene!.brightness,
+        transitionTime: 1500
+      });
+    });
+
+    await Promise.allSettled(promises);
+  }
+
+  private getSpatialColor(x: number, y: number, time: number, scene: Scene): Color {
+    if (!scene.spatial) return this.getRandomColorFromPalette();
+
+    const { mode, scale, speed, angle = 0 } = scene.spatial;
+    const palette = scene.palette;
+    
+    // Normalize coordinates to 0-1
+    const nx = x / 100;
+    const ny = y / 100;
+
+    let phase = 0;
+
+    switch (mode) {
+      case 'linear':
+        // Convert angle to radians
+        const rad = (angle * Math.PI) / 180;
+        // Project point onto the vector defined by angle
+        // p = x*cos(theta) + y*sin(theta)
+        phase = (nx * Math.cos(rad) + ny * Math.sin(rad));
+        break;
+      
+      case 'radial':
+        // Distance from center (0.5, 0.5)
+        const dx = nx - 0.5;
+        const dy = ny - 0.5;
+        phase = Math.sqrt(dx*dx + dy*dy);
+        break;
+        
+      case 'random':
+      default:
+        return this.getRandomColorFromPalette();
+    }
+
+    // Apply scale and time
+    // Phase determines where we are in the palette
+    // phase + time * speed
+    const t = time * speed;
+    const patternValue = (phase * scale) - t;
+    
+    // Map to palette index
+    // We use modulo to loop through palette
+    // Handle negative values correctly for modulo
+    const len = palette.length;
+    let normalizedIndex = patternValue % len;
+    if (normalizedIndex < 0) normalizedIndex += len;
+    
+    const index1 = Math.floor(normalizedIndex);
+    const index2 = (index1 + 1) % len;
+    const fraction = normalizedIndex - index1;
+
+    return this.interpolateColors(palette[index1], palette[index2], fraction);
+  }
+
+  private interpolateColors(c1: Color, c2: Color, factor: number): Color {
+    // Shortest path interpolation for Hue
+    let h1 = c1.hue;
+    let h2 = c2.hue;
+    const diff = h2 - h1;
+
+    if (diff > 180) h2 -= 360;
+    else if (diff < -180) h2 += 360;
+
+    let h = h1 + (h2 - h1) * factor;
+    if (h < 0) h += 360;
+    if (h >= 360) h -= 360;
+
+    // Simple linear interpolation for saturation
+    const s = c1.saturation + (c2.saturation - c1.saturation) * factor;
+
+    return { hue: h, saturation: s };
   }
 
   private getEligibleDevices() {

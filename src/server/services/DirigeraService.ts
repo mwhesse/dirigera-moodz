@@ -3,11 +3,12 @@ import { Device, DirigeraConfig, LightUpdate, LightCommand, ScheduledCommand } f
 import { Logger } from 'winston';
 import fs from 'fs';
 import path from 'path';
+import { EventEmitter } from 'events';
 
 const TOKEN_FILE = path.join(process.cwd(), '.dirigera_token');
 const SELECTION_FILE = path.join(process.cwd(), '.dirigera_selection.json');
 
-export class DirigeraService {
+export class DirigeraService extends EventEmitter {
   private client: DirigeraClient | null = null;
   private devices: Map<string, Device> = new Map();
   private selectedDeviceIds: Set<string> = new Set();
@@ -17,6 +18,7 @@ export class DirigeraService {
   private config: DirigeraConfig;
 
   constructor(config: DirigeraConfig, logger: Logger) {
+    super();
     this.logger = logger;
     this.config = config;
     this.commandQueue = new CommandQueue(10, logger); // 10 commands/second limit
@@ -224,6 +226,38 @@ export class DirigeraService {
       return;
     }
 
+    // Optimistic update: Update local state and emit event immediately
+    const updatedDevices: Device[] = [];
+    this.devices.forEach(device => {
+      if (!device.isSelected) return;
+      if (!device.currentState.isOn && update.isOn !== true) return;
+
+      let hasChanges = false;
+      if (update.isOn !== undefined) {
+        device.currentState.isOn = update.isOn;
+        hasChanges = true;
+      }
+      if (update.color && device.capabilities.canChangeColor) {
+        device.currentState.color = {
+          hue: update.color.hue,
+          saturation: update.color.saturation
+        };
+        hasChanges = true;
+      }
+      if (update.brightness !== undefined && device.capabilities.canChangeBrightness) {
+        device.currentState.brightness = update.brightness;
+        hasChanges = true;
+      }
+
+      if (hasChanges) {
+        updatedDevices.push(device);
+      }
+    });
+
+    if (updatedDevices.length > 0) {
+      this.emit('devicesUpdate', updatedDevices);
+    }
+
     // Silent - only show actual lamp commands
 
     // Queue commands to respect rate limits
@@ -396,19 +430,32 @@ export class DirigeraService {
   }
 
   private handleDeviceUpdate(update: any): void {
-    this.logger.debug('Device update received:', update);
+    // this.logger.debug('Device update received:', update);
     // Update local device cache
     if (update.id && this.devices.has(update.id)) {
       const device = this.devices.get(update.id)!;
+      let hasChanges = false;
+
       if (update.attributes) {
-        device.currentState.isOn = update.attributes.isOn ?? device.currentState.isOn;
-        device.currentState.brightness = update.attributes.lightLevel ?? device.currentState.brightness;
+        if (update.attributes.isOn !== undefined && update.attributes.isOn !== device.currentState.isOn) {
+           device.currentState.isOn = update.attributes.isOn;
+           hasChanges = true;
+        }
+        if (update.attributes.lightLevel !== undefined && update.attributes.lightLevel !== device.currentState.brightness) {
+           device.currentState.brightness = update.attributes.lightLevel;
+           hasChanges = true;
+        }
         if (update.attributes.colorHue !== undefined) {
-          device.currentState.color = {
+           device.currentState.color = {
             hue: update.attributes.colorHue,
             saturation: update.attributes.colorSaturation || 1
           };
+          hasChanges = true;
         }
+      }
+
+      if (hasChanges) {
+        this.emit('deviceUpdate', device);
       }
     }
   }
@@ -469,6 +516,34 @@ export class DirigeraService {
       return;
     }
 
+    // Optimistic update
+    const updatedDevices: Device[] = [];
+    updates.forEach(update => {
+      const device = this.devices.get(update.deviceId);
+      if (!device || !device.isSelected || !device.currentState.isOn) return;
+
+      let hasChanges = false;
+      if (update.color && device.capabilities.canChangeColor) {
+         device.currentState.color = {
+            hue: update.color.hue,
+            saturation: update.color.saturation
+         };
+         hasChanges = true;
+      }
+      if (update.brightness !== undefined && device.capabilities.canChangeBrightness) {
+        device.currentState.brightness = update.brightness;
+        hasChanges = true;
+      }
+      
+      if (hasChanges) {
+        updatedDevices.push(device);
+      }
+    });
+
+    if (updatedDevices.length > 0) {
+      this.emit('devicesUpdate', updatedDevices);
+    }
+
     return this.commandQueue.add(async () => {
       const promises: Promise<any>[] = [];
       
@@ -514,6 +589,23 @@ export class DirigeraService {
     const device = this.devices.get(update.deviceId);
     if (!device || !device.currentState.isOn) {
       return; // Skip offline devices
+    }
+
+    // Optimistic update
+    let hasChanges = false;
+    if (update.color && device.capabilities.canChangeColor) {
+        device.currentState.color = {
+          hue: update.color.hue,
+          saturation: update.color.saturation
+        };
+        hasChanges = true;
+    }
+    if (update.brightness && device.capabilities.canChangeBrightness) {
+        device.currentState.brightness = update.brightness;
+        hasChanges = true;
+    }
+    if (hasChanges) {
+      this.emit('deviceUpdate', device);
     }
 
     return this.commandQueue.add(async () => {
