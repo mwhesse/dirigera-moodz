@@ -1,5 +1,7 @@
 # Dirigera Moodz
 
+![Dirigera Moodz Banner](public/banner.svg)
+
 A real-time light synchronization app for IKEA Dirigera Hub. 
 This application captures audio from your browser (tab audio or microphone) and synchronizes your IKEA smart lights to the music in real-time.
 
